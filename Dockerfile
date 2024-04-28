@@ -1,6 +1,6 @@
 FROM public.ecr.aws/lambda/python:3.11
 
-WORKDIR /app
+WORKDIR /picktoss-llm-worker
 
 RUN pip install poetry
 
