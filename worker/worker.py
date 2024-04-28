@@ -35,5 +35,9 @@ def handler(event, context):
     keypoint.start()
     mix_up.start()
     multiple_choice.start()
+    
+    keypoint.join()
+    mix_up.join()
+    multiple_choice.join()
 
     return {"statusCode": 200, "message": "hi"}
