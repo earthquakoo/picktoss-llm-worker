@@ -9,6 +9,7 @@ from core.llm.exception import InvalidLLMJsonResponseError
 from core.enums.enum import LLMErrorType, SubscriptionPlanType, QuizQuestionNum, DocumentStatus, QuizType
 from core.llm.utils import fill_message_placeholders, load_prompt_messages
 
+
 def mix_up_worker(
     s3_client: S3Client,
     discord_client: DiscordClient, 

@@ -26,12 +26,11 @@ def handler(event, context):
     # core client settings
     s3_client = S3Client(access_key=os.environ["PICKTOSS_AWS_ACCESS_KEY"], secret_key=os.environ["PICKTOSS_AWS_SECRET_KEY"], region_name="us-east-1", bucket_name=os.environ["PICKTOSS_S3_BUCKET_NAME"])
     discord_client = DiscordClient(bot_token=os.environ["PICKTOSS_DISCORD_BOT_TOKEN"], channel_id=os.environ["PICKTOSS_DISCORD_CHANNEL_ID"])
-    db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
     chat_llm = OpenAIChatLLM(api_key=os.environ["PICKTOSS_OPENAI_API_KEY"], model="gpt-3.5-turbo-0125")
     
-    keypoint = Thread(target=keypoint_worker, args=(s3_client, discord_client, db_manager, chat_llm, s3_key, db_pk, subscription_plan))
-    mix_up = Thread(target=mix_up_worker, args=(s3_client, discord_client, db_manager, chat_llm, s3_key, db_pk, subscription_plan))
-    multiple_choice = Thread(target=multiple_choice_worker, args=(s3_client, discord_client, db_manager, chat_llm, s3_key, db_pk, subscription_plan))
+    keypoint = Thread(target=keypoint_worker, args=(s3_client, discord_client, chat_llm, s3_key, db_pk, subscription_plan))
+    mix_up = Thread(target=mix_up_worker, args=(s3_client, discord_client, chat_llm, s3_key, db_pk, subscription_plan))
+    multiple_choice = Thread(target=multiple_choice_worker, args=(s3_client, discord_client, chat_llm, s3_key, db_pk, subscription_plan))
     
     keypoint.start()
     mix_up.start()
