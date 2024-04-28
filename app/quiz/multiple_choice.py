@@ -96,8 +96,8 @@ def multiple_choice_worker(
                 
                 if len(options) == 4:
                     for option in options:
-                        option_insert_query = "INSERT INTO options (options, quiz_id) VALUES (%s, %s)"
-                        db_manager.execute_query(option_insert_query, (option, quiz_id))
+                        option_insert_query = "INSERT INTO options (options, quiz_id, created_at, updated_at) VALUES (%s, %s, %s, %s)"
+                        db_manager.execute_query(option_insert_query, (option, quiz_id, timestamp, timestamp))
                     
                     db_manager.commit()
 
