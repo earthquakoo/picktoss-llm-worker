@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from core.database.database_manager import DatabaseManager
@@ -11,7 +12,6 @@ from core.llm.utils import fill_message_placeholders, load_prompt_messages
 def mix_up_worker(
     s3_client: S3Client,
     discord_client: DiscordClient, 
-    db_manager: DatabaseManager, 
     chat_llm: OpenAIChatLLM,
     s3_key: str,
     db_pk: int,
@@ -20,15 +20,17 @@ def mix_up_worker(
     bucket_obj = s3_client.get_object(key=s3_key)
     content = bucket_obj.decode_content_str()
     
+    db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
+    
     # Generate Questions
     CHUNK_SIZE = 1100
     chunks: list[str] = []
     for i in range(0, len(content), CHUNK_SIZE):
         chunks.append(content[i : i + CHUNK_SIZE])
     # dev & prod
-    without_placeholder_messages = load_prompt_messages("/var/task/src/core/llm/prompts/generate_mix_up_quiz.txt") 
+    without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_mix_up_quiz.txt") 
     # local
-    # without_placeholder_messages = load_prompt_messages("src/core/llm/prompts/generate_mix_up_quiz.txt")
+    # without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_mix_up_quiz.txt")
     free_plan_question_expose_count = 0
     total_generated_question_count = 0
 
