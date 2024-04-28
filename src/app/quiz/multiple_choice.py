@@ -93,7 +93,7 @@ def multiple_choice_worker(
                 db_manager.commit()
                 
                 for option in options:
-                    option_insert_query = "INSERT INTO multiple_choice (option, quiz_id) VALUES (%s, %s)"
+                    option_insert_query = "INSERT INTO option (option, quiz_id) VALUES (%s, %s)"
                     db_manager.execute_query(option_insert_query, (option, quiz_id))
                 
                 db_manager.commit()
