@@ -11,7 +11,7 @@ RUN poetry install --no-dev
 
 COPY . ${LAMBDA_TASK_ROOT}
 
-CMD ["src.worker.worker.handler"]
+CMD ["worker.worker.handler"]
 
 
 # docker build -t reminder -f ./reminder/worker/question_generation/Dockerfile .

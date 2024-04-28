@@ -3,7 +3,7 @@ from dataclasses import asdict, dataclass
 from typing import Literal
 from openai import AsyncOpenAI, OpenAI
 
-from src.core.llm.exception import InvalidLLMJsonResponseError
+from core.llm.exception import InvalidLLMJsonResponseError
 
 
 @dataclass

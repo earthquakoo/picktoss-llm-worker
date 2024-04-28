@@ -1,4 +1,4 @@
-from src.core.llm.openai import ChatMessage
+from core.llm.openai import ChatMessage
 
 
 def load_prompt_messages(prompt_path: str) -> list[ChatMessage]:

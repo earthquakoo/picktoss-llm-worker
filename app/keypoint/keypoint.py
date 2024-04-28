@@ -1,14 +1,15 @@
 from datetime import datetime
 
-from src.core.database.database_manager import DatabaseManager
-from src.core.s3.s3_client import S3Client
-from src.core.discord.discord_client import DiscordClient
-from src.core.llm.openai import OpenAIChatLLM
-from src.core.llm.exception import InvalidLLMJsonResponseError
-from src.core.enums.enum import LLMErrorType, SubscriptionPlanType, QuizQuestionNum, DocumentStatus, QuizType
-from src.core.llm.utils import fill_message_placeholders, load_prompt_messages
+from core.database.database_manager import DatabaseManager
+from core.s3.s3_client import S3Client
+from core.discord.discord_client import DiscordClient
+from core.llm.openai import OpenAIChatLLM
+from core.llm.exception import InvalidLLMJsonResponseError
+from core.enums.enum import LLMErrorType, SubscriptionPlanType, QuizQuestionNum, DocumentStatus
+from core.llm.utils import fill_message_placeholders, load_prompt_messages
 
-def mix_up_worker(
+
+def keypoint_worker(
     s3_client: S3Client,
     discord_client: DiscordClient, 
     db_manager: DatabaseManager, 
@@ -25,10 +26,9 @@ def mix_up_worker(
     chunks: list[str] = []
     for i in range(0, len(content), CHUNK_SIZE):
         chunks.append(content[i : i + CHUNK_SIZE])
-    # dev & prod
-    without_placeholder_messages = load_prompt_messages("/var/task/src/core/llm/prompts/generate_mix_up_quiz.txt") 
-    # local
-    # without_placeholder_messages = load_prompt_messages("src/core/llm/prompts/generate_mix_up_quiz.txt")
+
+    without_placeholder_messages = load_prompt_messages("/var/task/src/core/llm/prompts/generate_keypoints.txt") # dev & prod
+    # without_placeholder_messages = load_prompt_messages("src/core/llm/prompts/generate_keypoints.txt") # local
     free_plan_question_expose_count = 0
     total_generated_question_count = 0
 
@@ -65,8 +65,7 @@ def mix_up_worker(
 
         try:
             for q_set in resp_dict:
-                question, answer, explanation = q_set["question"], q_set["answer"], q_set["explanation"]
-                answer_count = 0
+                question, answer = q_set["question"], q_set["answer"]
 
                 # To avoid duplication
                 prev_questions.append(question)
@@ -85,9 +84,9 @@ def mix_up_worker(
                     delivered_count = 1
                 else:
                     raise ValueError("Wrong subscription plan type")
-                question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, answer_count, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                question_insert_query = "INSERT INTO key_point (question, answer, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s)"
                 timestamp = datetime.now()
-                db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, False, answer_count, db_pk, timestamp, timestamp))
+                db_manager.execute_query(question_insert_query, (question, answer, db_pk, timestamp, timestamp))
                 db_manager.commit()
 
         except Exception as e:
@@ -124,4 +123,5 @@ def mix_up_worker(
         db_manager.commit()
         print("PROCESSED")
         
+    
     db_manager.close()

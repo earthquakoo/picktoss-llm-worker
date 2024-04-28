@@ -1,15 +1,14 @@
 from datetime import datetime
 
-from src.core.database.database_manager import DatabaseManager
-from src.core.s3.s3_client import S3Client
-from src.core.discord.discord_client import DiscordClient
-from src.core.llm.openai import OpenAIChatLLM
-from src.core.llm.exception import InvalidLLMJsonResponseError
-from src.core.enums.enum import LLMErrorType, SubscriptionPlanType, QuizQuestionNum, DocumentStatus
-from src.core.llm.utils import fill_message_placeholders, load_prompt_messages
+from core.database.database_manager import DatabaseManager
+from core.s3.s3_client import S3Client
+from core.discord.discord_client import DiscordClient
+from core.llm.openai import OpenAIChatLLM
+from core.llm.exception import InvalidLLMJsonResponseError
+from core.enums.enum import LLMErrorType, SubscriptionPlanType, QuizQuestionNum, DocumentStatus, QuizType
+from core.llm.utils import fill_message_placeholders, load_prompt_messages
 
-
-def keypoint_worker(
+def multiple_choice_worker(
     s3_client: S3Client,
     discord_client: DiscordClient, 
     db_manager: DatabaseManager, 
@@ -26,9 +25,10 @@ def keypoint_worker(
     chunks: list[str] = []
     for i in range(0, len(content), CHUNK_SIZE):
         chunks.append(content[i : i + CHUNK_SIZE])
-
-    without_placeholder_messages = load_prompt_messages("/var/task/src/core/llm/prompts/generate_keypoints.txt") # dev & prod
-    # without_placeholder_messages = load_prompt_messages("src/core/llm/prompts/generate_keypoints.txt") # local
+        
+    # dev & prod
+    without_placeholder_messages = load_prompt_messages("/var/task/src/core/llm/prompts/generate_multiple_choice_quiz.txt") 
+    # without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_multiple_choice_quiz.txt") # local
     free_plan_question_expose_count = 0
     total_generated_question_count = 0
 
@@ -65,7 +65,8 @@ def keypoint_worker(
 
         try:
             for q_set in resp_dict:
-                question, answer = q_set["question"], q_set["answer"]
+                question, answer, options, explanation = q_set["question"], q_set["options"], q_set["answer"], q_set["explanation"]
+                answer_count = 0
 
                 # To avoid duplication
                 prev_questions.append(question)
@@ -84,9 +85,17 @@ def keypoint_worker(
                     delivered_count = 1
                 else:
                     raise ValueError("Wrong subscription plan type")
-                question_insert_query = "INSERT INTO key_point (question, answer, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s)"
+                quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, answer_count, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                
                 timestamp = datetime.now()
-                db_manager.execute_query(question_insert_query, (question, answer, db_pk, timestamp, timestamp))
+                db_manager.execute_query(quiz_insert_query, (question, answer, explanation, delivered_count, QuizType.MULTIPLE_CHOICE.value, False, answer_count, db_pk, timestamp, timestamp))
+                quiz_id = db_manager.last_insert_id()
+                db_manager.commit()
+                
+                for option in options:
+                    option_insert_query = "INSERT INTO option (option, quiz_id) VALUES (%s, %s)"
+                    db_manager.execute_query(option_insert_query, (option, quiz_id))
+                
                 db_manager.commit()
 
         except Exception as e:
@@ -117,11 +126,11 @@ def keypoint_worker(
         db_manager.commit()
         print("PARTIAL_SUCCESS")
 
-    else:  # ALL successful
+    # ALL successful
+    else:
         document_update_query = "UPDATE document SET status = %s WHERE id = %s"
         db_manager.execute_query(document_update_query, (DocumentStatus.PROCESSED.value, db_pk))
         db_manager.commit()
         print("PROCESSED")
         
-    
     db_manager.close()

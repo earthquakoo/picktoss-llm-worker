@@ -3,13 +3,13 @@ import json
 import logging
 from threading import Thread
 
-from src.core.s3.s3_client import S3Client
-from src.core.discord.discord_client import DiscordClient
-from src.core.llm.openai import OpenAIChatLLM
-from src.core.database.database_manager import DatabaseManager
-from src.app.keypoint.keypoint import keypoint_worker
-from src.app.quiz.mix_up import mix_up_worker
-from src.app.quiz.multiple_choice import multiple_choice_worker
+from core.s3.s3_client import S3Client
+from core.discord.discord_client import DiscordClient
+from core.llm.openai import OpenAIChatLLM
+from core.database.database_manager import DatabaseManager
+from app.keypoint.keypoint import keypoint_worker
+from app.quiz.mix_up import mix_up_worker
+from app.quiz.multiple_choice import multiple_choice_worker
 
 logging.basicConfig(level=logging.INFO)
 

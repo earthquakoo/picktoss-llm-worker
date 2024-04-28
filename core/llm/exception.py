@@ -1,4 +1,4 @@
-from src.core.exception.base import BaseCustomException
+from core.exception.base import BaseCustomException
 from fastapi import status
 
 
