@@ -66,7 +66,6 @@ def multiple_choice_worker(
         try:
             for q_set in resp_dict:
                 question, answer, options, explanation = q_set["question"], q_set["options"], q_set["answer"], q_set["explanation"]
-                options = "[%s]" %(', '.join(map(str, options)))
                 answer_count = 0
 
                 # To avoid duplication
@@ -86,9 +85,17 @@ def multiple_choice_worker(
                     delivered_count = 1
                 else:
                     raise ValueError("Wrong subscription plan type")
-                question_insert_query = "INSERT INTO quiz (question, answer, explanation, options, delivered_count, quiz_type, bookmark, answer_count, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, answer_count, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                
                 timestamp = datetime.now()
-                db_manager.execute_query(question_insert_query, (question, answer, explanation, options, delivered_count, QuizType.MULTIPLE_CHOICE.value, False, answer_count, db_pk, timestamp, timestamp))
+                db_manager.execute_query(quiz_insert_query, (question, answer, explanation, delivered_count, QuizType.MULTIPLE_CHOICE.value, False, answer_count, db_pk, timestamp, timestamp))
+                quiz_id = db_manager.last_insert_id()
+                db_manager.commit()
+                
+                for option in options:
+                    option_insert_query = "INSERT INTO multiple_choice (option, quiz_id) VALUES (%s, %s)"
+                    db_manager.execute_query(option_insert_query, (option, quiz_id))
+                
                 db_manager.commit()
 
         except Exception as e:

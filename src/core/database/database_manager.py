@@ -39,3 +39,12 @@ class DatabaseManager:
             self.cursor.close()
         if self.connection:
             self.connection.close()
+            
+    def last_insert_id(self):
+        if not self.connection or not self.cursor:
+            self.connect()
+        try:
+            return self.cursor.lastrowid
+        except Exception as e:
+            print("Error fetching last insert id:", e)
+            return None
