@@ -86,9 +86,9 @@ def keypoint_worker(
                     delivered_count = 1
                 else:
                     raise ValueError("Wrong subscription plan type")
-                question_insert_query = "INSERT INTO key_point (question, answer, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s)"
+                question_insert_query = "INSERT INTO key_point (question, answer, bookmark, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s)"
                 timestamp = datetime.now()
-                db_manager.execute_query(question_insert_query, (question, answer, db_pk, timestamp, timestamp))
+                db_manager.execute_query(question_insert_query, (question, answer, False, db_pk, timestamp, timestamp))
                 db_manager.commit()
 
         except Exception as e:

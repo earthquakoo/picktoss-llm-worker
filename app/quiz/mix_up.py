@@ -88,9 +88,9 @@ def mix_up_worker(
                     delivered_count = 1
                 else:
                     raise ValueError("Wrong subscription plan type")
-                question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, incorrect_answer_count, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, incorrect_answer_count, latest, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 timestamp = datetime.now()
-                db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, False, incorrect_answer_count, db_pk, timestamp, timestamp))
+                db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, False, incorrect_answer_count, True, db_pk, timestamp, timestamp))
                 db_manager.commit()
 
         except Exception as e:

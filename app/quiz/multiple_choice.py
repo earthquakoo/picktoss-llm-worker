@@ -88,10 +88,10 @@ def multiple_choice_worker(
                     delivered_count = 1
                 else:
                     raise ValueError("Wrong subscription plan type")
-                quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, incorrect_answer_count, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, incorrect_answer_count, latest, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 
                 timestamp = datetime.now()
-                db_manager.execute_query(quiz_insert_query, (question, answer, explanation, delivered_count, QuizType.MULTIPLE_CHOICE.value, False, incorrect_answer_count, db_pk, timestamp, timestamp))
+                db_manager.execute_query(quiz_insert_query, (question, answer, explanation, delivered_count, QuizType.MULTIPLE_CHOICE.value, False, incorrect_answer_count, True, db_pk, timestamp, timestamp))
                 db_manager.commit()
                 quiz_id = db_manager.last_insert_id()
                 
