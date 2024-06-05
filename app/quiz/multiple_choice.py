@@ -88,6 +88,9 @@ def multiple_choice_worker(
                     delivered_count = 1
                 else:
                     raise ValueError("Wrong subscription plan type")
+                
+                
+                
                 quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, incorrect_answer_count, latest, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 
                 timestamp = datetime.now()
