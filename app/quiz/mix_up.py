@@ -1,4 +1,5 @@
 import os
+import pytz
 from datetime import datetime
 
 from core.database.database_manager import DatabaseManager
@@ -92,7 +93,7 @@ def mix_up_worker(
                 if answer == "incorrect" or answer == "correct":
                 
                     question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, incorrect_answer_count, latest, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                    timestamp = datetime.now()
+                    timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
                     db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, False, incorrect_answer_count, True, db_pk, timestamp, timestamp))
                     db_manager.commit()
 

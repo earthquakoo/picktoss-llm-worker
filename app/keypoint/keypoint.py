@@ -1,4 +1,5 @@
 import os
+import pytz
 from datetime import datetime
 
 from core.database.database_manager import DatabaseManager
@@ -87,7 +88,7 @@ def keypoint_worker(
                 else:
                     raise ValueError("Wrong subscription plan type")
                 question_insert_query = "INSERT INTO key_point (question, answer, bookmark, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s)"
-                timestamp = datetime.now()
+                timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
                 db_manager.execute_query(question_insert_query, (question, answer, False, db_pk, timestamp, timestamp))
                 db_manager.commit()
 

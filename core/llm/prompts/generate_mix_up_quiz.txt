@@ -8,21 +8,22 @@
 각 세트에 대해서 당신이 생성할 것은 아래 3가지와 같습니다.
 
 1. 주어진 필기노트로부터 생성한 "질문"
+    - 질문은 반드시 OX 퀴즈 형식에 맞게 명확한 진술문 형태로 작성되어야 합니다. 예를 들어 "Spring Boot에서, service layer에서 트랜잭션을 시작하지 않으면 데이터가 영속이 될까요?"가 아니라 "Spring Boot에서, service layer에서 트랜잭션을 시작하지 않으면 데이터가 영속이 되지 않는다." 같은 형식이어야 합니다.
     - [중요] 당신이 생성한 "OX 퀴즈"는 최대한 입력받은 "필기노트"를 이용해서 생성해야만 합니다. 하지만, 필기노트의 내용이 부족할 경우 당신이 추가내용을 보충할 수 있습니다.
 2. 생성된 "질문"에대한 "답변"
-    - [중요] 당신이 생성한 "OX퀴즈"는 최대한 입력받은 "필기노트"를 이용해서 "답변"을 판단해야하고, "질문"이 올바르다면 "답변"은 "correct", "질문"이 틀리다면 "incorrect"로 판단하면 됩니다.
+    - [중요] 당신이 생성한 "OX퀴즈"는 최대한 입력받은 "필기노트"를 이용해서 "답변"을 판단해야하고, "질문"이 올바르다면 "correct", "질문"이 틀리다면 "incorrect"로 판단하면 됩니다.
 3. 생성된 "OX퀴즈"에 대한 "해설"
-	- [중요] 당신이 생성한 "OX퀴즈"에 대한 해설은 최대한 입력받은 "필기노트"를 이용해서 생성해야만 합니다. 하지만, 필기노트의 내용이 부족할 경우 당신이 추가내용을 보충할 수 있습니다.
-
+    - [중요] 당신이 생성한 "OX퀴즈"에 대한 해설은 최대한 입력받은 "필기노트"를 이용해서 생성해야만 합니다. 하지만, 필기노트의 내용이 부족할 경우 당신이 추가내용을 보충할 수 있습니다.
+    - 해설은 300자 이내로 작성해주세요.
 
 <요구사항>
-1. "명령"이 아니라 "질문"형식으로 질문해주세요. 예를 들어, "xxx에 대해서 설명해주세요"와 같이 명령 형식으로 말하지말고, "xxx의 장점은 뭘까요?", "xxx를 사용했을때 한가지 단점이 있습니다. 이는 무엇일까요?" 같은 "질문" 형식으로 해주세요.
+1. "명령"이 아니라 "질문"형식이나 "진술문" 형태로 질문해주세요. 예를 들어, "xxx에 대해서 설명해주세요"와 같이 명령 형식으로 말하지말고, "xxx의 장점은 뭘까요?", "xxx를 사용했을때 한가지 단점이 있습니다. 이는 무엇일까요?" 같은 "질문" 형식으로 하거나 "xxx를 사용하면 이점을 얻을 수 있다"와 같은 진술문 형식으로 질문해주세요.
 2. 너무 추상적이고 넓은 질문은 좋지 않습니다. 예를 들어, 단순히 "xxx는 뭘까요?"는 너무 추상적입니다. 구체적이고 복습에 효과적인 질문을 해주십시오. 예를 들어, "xxx를 했을때의 장점은 무엇인가요?", "Spring Boot에서, service layer에서 트랜잭션을 시작하지 않으면 데이터가 영속이 될까요?"와 같은 구체적이고 효과적인 질문을 해주세요. 
 
 <주의사항>
 1. "질문"에 대해서: 너무 추상적이고 broad한 질문을 하지마세요!!!!!
 2. "답변"에 대해서: "질문"이 올바르면 "correct", "질문"이 틀리다면 "incorrect"를 반환해주세요.
-3. "해설"에 대해서: 필기노트의 내용을 바탕으로 "해설"을 만들고, "자세하게" 답변해주세요. 또한, 융요한 부가적인 내용을 추가해도 괜찮습니다. 
+3. "해설"에 대해서: 필기노트의 내용을 바탕으로 "해설"을 만들고, "자세하게" 답변해주세요. 또한, 유용한 부가적인 내용을 추가해도 괜찮습니다. 
 4. "해설"은 300자 이내로 해주세요.
 
 <중요!!!!!!!!!!!!!!!!!!!!!!!!>
@@ -84,84 +85,75 @@ OS(Operating System)은 하드웨어 바로 윗단에 설치되는 소프트웨�
 
 OS의 기능
 1. Resource manager
-	* Computer system내의 resource를 효율적으로 관리한다
-	* Resource: CPU, memory, hard disk 등 hardware resource 뿐만 아니라, software resource 까지를 통칭해서 부름
-	* 전체적인 성능을 향상시키려다보면 일부 program 또는 user가 불이익을 당할 수 있다. 따라서, OS는 resource를 효율적으로 분배하도록 하되, fair하게 분배하는 균형자 역할도 함께 수행한다.
+    * Computer system내의 resource를 효율적으로 관리한다
+    * Resource: CPU, memory, hard disk 등 hardware resource 뿐만 아니라, software resource 까지를 통칭해서 부름
+    * 전체적인 성능을 향상시키려다보면 일부 program 또는 user가 불이익을 당할 수 있다. 따라서, OS는 resource를 효율적으로 분배하도록 하되, fair하게 분배하는 균형자 역할도 함께 수행한다.
 2. Interface b/w applications and hardware
-	* 편리한 환경: OS가 multiple users 및 program들에게 "독자적으로" 컴퓨터를 사용하는 것과 같은 "환상"을 제공하는 것 (ex. time-sharing of CPU)
-	* 추상화: Hardware를 다루는 복잡한건 OS가 대행해주고, user 및 program은 에 대한 자세한 내용을 알지 못해도 프로그램을 실행할 수 있도록 해줌
-		* Provides API (syscalls) for programs to ask for OS services / resources
-		* ex) 사용자가 file이 disk에 어떻게 저장되는지 자세히 알지 못해도, OS가 제공하는 편리한 interface로 쉽게 할 수 있다.
+    * 편리한 환경: OS가 multiple users 및 program들에게 "독자적으로" 컴퓨터를 사용하는 것과 같은 "환상"을 제공하는 것 (ex. time-sharing of CPU)
+    * 추상화: Hardware를 다루는 복잡한건 OS가 대행해주고, user 및 program은 에 대한 자세한 내용을 알지 못해도 프로그램을 실행할 수 있도록 해줌
+        * Provides API (syscalls) for programs to ask for OS services / resources
+        * ex) 사용자가 file이 disk에 어떻게 저장되는지 자세히 알지 못해도, OS가 제공하는 편리한 interface로 쉽게 할 수 있다.
 3. User와 OS자신을 보호하는 역할
-	* 여러 user의 프로그램이 하나의 컴퓨터에서 실행되면 이에 대한 security가 필요하다.
-	* malicious program을 작성해 다른 user program의 memory를 참조한다든지, 또는 다른 user의 private file을 열어본다던지 하는일이 일어나서는 안된다.
+    * 여러 user의 프로그램이 하나의 컴퓨터에서 실행되면 이에 대한 security가 필요하다.
+    * malicious program을 작성해 다른 user program의 memory를 참조한다든지, 또는 다른 user의 private file을 열어본다던지 하는일이 일어나서는 안된다.
 
 OS의 분류
 1. Concurrentcy에 따른 분류
-	- Multi-tasking(다중작업)
-		- 동시 작업을 지원하는 OS
-		- 여러 프로그램을 같이 실행시키지만, 유저 개개인의 관점에서는 각 프로그램에 대한 키보드 입력의 결과를 곧바로 화면에 보여주기 때문에 interactive system이라고도 한다.
-		- Multi-tasking을 multi-programming with RR algorithm 이라고도 한다.
-		- Single-tasking: 한번에 하나의 프로그램만 실행
-	- Multi-programming(다중 프로그래밍)
-		* CPU와 달리 memory의 경우 여러 프로그램들을 memory에 동시에 올려놓을 수 있다.
-		* 이처럼 memory를 분할해, multiple programs들을 동시에 memory에 올려놓고 처리하는 시스템을 multi-programming 시스템이라고 한다.
-	- Multi-processing(다중처리기)
-		* 하나의 컴퓨터에 multiple CPUs
-		* 각 CPU에서 프로그램을 따로 실행시킬수 있어 execution이 훨씬 빨라지지만, more complicated mechanism을 필요
-	- Time sharing system(시분할 시스템)
-		*  Multi-tasking에서 여러 program들이 CPU와 memory를 공유한다. 이때, 한개의 CPU로 겁나 빠르게 context switching을 해가면서 사용자 입장에서는 동시에 처리되는것처럼 보인다.
-		* 이와 같이여러 프로그램들이 CPU의 작업시간을 나누어 쓰는것을 time sharing system이라고 한다
+    - Multi-tasking(다중작업)
+        - 동시 작업을 지원하는 OS
+        - 여러 프로그램을 같이 실행시키지만, 유저 개개인의 관점에서는 각 프로그램에 대한 키보드 입력의 결과를 곧바로 화면에 보여주기 때문에 interactive system이라고도 한다.
+        - Multi-tasking을 multi-programming with RR algorithm 이라고도 한다.
+        - Single-tasking: 한번에 하나의 프로그램만 실행
+    - Multi-programming(다중 프로그래밍)
+        * CPU와 달리 memory의 경우 여러 프로그램들을 memory에 동시에 올려놓을 수 있다.
+        * 이처럼 memory를 분할해, multiple programs들을 동시에 memory에 올려놓고 처리하는 시스템을 multi-programming 시스템이라고 한다.
+    - Multi-processing(다중처리기)
+        * 하나의 컴퓨터에 multiple CPUs
+        * 각 CPU에서 프로그램을 따로 실행시킬수 있어 execution이 훨씬 빨라지지만, more complicated mechanism을 필요
+    - Time sharing system(시분할 시스템)
+        * Multi-tasking에서 여러 program들이 CPU와 memory를 공유한다. 이때, 한개의 CPU로 겁나 빠르게 context switching을 해가면서 사용자 입장에서는 동시에 처리되는것처럼 보인다.
+        * 이와 같이여러 프로그램들이 CPU의 작업시간을 나누어 쓰는것을 time sharing system이라고 한다
 
 2. Multi-users 동시 지원 여부
-	* Single-user system
-		* 한 번에 한 명의 user만 사용
-		* DOS: single-user / single-tasking
-		* MS: single-user / multi-tasking
-	* Multi-users system
-		* multiple users이 동시에 사용
-		* 이메일 서버, web server, etc
+    * Single-user system
+        * 한 번에 한 명의 user만 사용
+        * DOS: single-user / single-tasking
+        * MS: single-user / multi-tasking
+    * Multi-users system
+        * multiple users이 동시에 사용
+        * 이메일 서버, web server, etc
 
-3.  작업을 처리하는 방식
-	* Batch processing system
-		* 요청된 작업을 일정량씩 모아서 한꺼번에 처리
-		* 모인 작업들을 처리할때, 모든 작업이 완전히 종료된 후에 결과를 얻을 수 있으므로, user 입장에서는 response time이 길어진다는 단점이 있다
-		* ex) 초창기 컴퓨터에 사용되었던 punch card system
-	* Time sharing system
-		* 여러 작업을 수행할 때 CPU를 일정한 time unit으로 분할해 사용한다. 그렇게 되면 user은 batch processing에 비해 짧은 response time을 갖게 된다. 또한 자기 혼자 컴퓨터를 independent하기 사용하는것 처럼 느낄 수 있다.
-		* aka 대화형 시스템(interactive system)
-		* 현대의 범용 컴퓨터는 대부분 time sharing을 사용.
-	* Real-time system
-		* 정해진 시간 안에 어떠한 일이 반드시 처리됨을 보장해야 하는 시스템
-		* 일정 시간 안에 작업이 완료되지 못하면 동작 자체가 안되거나 큰 위험이 초래할 가능성
-		* ex) 원자로, 공장제어 시스템, 미사일 제어 시스템
-		* Hard realtime system(강성 실시간 시스템)
-			* 주어진 시간을 지키지 못하면 매우 위험한 결과를 초래할 수 있음
-			* ex) 로켓, 원자로 제어 시스템 등
-		* Soft realtime system(연성 실시간 시스템)
-			* 데이터가 정해진 시간 단위로 전달되어야 올바른 기능을 수행할 수 있는 시스템
-			* ex) multi-media streaming system
-			* 시간이 안지켜지면 영상 재생이 끊길수는 있어도 위험하지는 않음
+3. 작업을 처리하는 방식
+    * Batch processing system
+        * 요청된 작업을 일정량씩 모아서 한꺼번에 처리
+        * 모인 작업들을 처리할때, 모든 작업이 완전히 종료된 후에 결과를 얻을 수 있으므로, user 입장에서는 response time이 길어진다는 단점이 있다
+        * ex) 초창기 컴퓨터에 사용되었던 punch card system
+    * Time sharing system
+        * 여러 작업을 수행할 때 CPU를 일정한 time unit으로 분할해 사용한다. 그렇게 되면 user은 batch processing에 비해 짧은 response time을 갖게 된다. 또한 자기 혼자 컴퓨터를 independent하기 사용하는것 처럼 느낄 수 있다.
+        * aka 대화형 시스템(interactive system)
+        * 현대의 범용 컴퓨터는 대부분 time sharing을 사용.
+    * Real-time system
+        * 정해진 시간 안에 어떠한 일이 반드시 처리됨을 보장해야 하는 시스템
+        * 일정 시간 안에 작업이 완료되지 못하면 동작 자체가 안되거나 큰 위험이 초래할 가능성
+        * ex) 원자로, 공장제어 시스템, 미사일 제어 시스템
+        * Hard realtime system(강성 실시간 시스템)
+            * 주어진 시간을 지키지 못하면 매우 위험한 결과를 초래할 수 있음
+            * ex) 로켓, 원자로 제어 시스템 등
+        * Soft realtime system(연성 실시간 시스템)
+            * 데이터가 정해진 시간 단위로 전달되어야 올바른 기능을 수행할 수 있는 시스템
+            * ex) multi-media streaming system
+            * 시간이 안지켜지면 영상 재생이 끊길수는 있어도 위험하지는 않음
 
 [%assistant%]
 [
     {
         "question": "Batch processing system은 모인 작업들을 처리할때, 모든 작업이 완전히 종료된 후에 결과를 얻을 수 있으므로, user 입장에서는 response time이 길어진다는 단점이 있다",
-	    "answer": "correct",
-	    "explanation": "요청된 작업을 일정량씩 모아서 한꺼번에 처리하므로, 모든 작업이 완전히 종료된 후에 결과를 얻을 수 있으므로, user 입장에서는 response time이 길어진다는 단점이 있습니다."
+        "answer": "correct",
+        "explanation": "요청된 작업을 일정량씩 모아서 한꺼번에 처리하므로, 모든 작업이 완전히 종료된 후에 결과를 얻을 수 있으므로, user 입장에서는 response time이 길어진다는 단점이 있습니다."
     },
     {
-        "question": "Interface b/w applications and hardware에서 추상화는 OS가 multiple users 및 program들에게 "독자적으로" 컴퓨터를 사용하는 것과 같은 "환상"을 제공하는 것을 말한다.",
+        "question": "Interface b/w applications and hardware에서 추상화는 OS가 multiple users 및 program들에게 '독자적으로' 컴퓨터를 사용하는 것과 같은 '환상'을 제공하는 것을 말한다.",
         "answer": "incorrect",
         "explanation": "Interface b/w applications and hardware에서 추상화는 Hardware를 다루는 복잡한건 OS가 대행해주고, user 및 program은 에 대한 자세한 내용을 알지 못해도 프로그램을 실행할 수 있도록 해주는 것을 말합니다."
     },
 ]
-
-[%user%]
-{{$note}}
-
-The number of generated question set must be 2 ~ 4.
-And the format must be JSON. Be careful about the format. especially the brackets and the comma.
-한국어로 대답하세요.
-
-응답:
