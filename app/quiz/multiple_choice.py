@@ -1,5 +1,6 @@
 import os
 import pytz
+import logging
 from datetime import datetime
 
 from core.database.database_manager import DatabaseManager
@@ -9,6 +10,9 @@ from core.llm.openai import OpenAIChatLLM
 from core.llm.exception import InvalidLLMJsonResponseError
 from core.enums.enum import LLMErrorType, SubscriptionPlanType, QuizQuestionNum, DocumentStatus, QuizType
 from core.llm.utils import fill_message_placeholders, load_prompt_messages
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 def multiple_choice_worker(
@@ -23,7 +27,7 @@ def multiple_choice_worker(
     content = bucket_obj.decode_content_str()
     
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
-    
+
     # Generate Questions
     CHUNK_SIZE = 1100
     chunks: list[str] = []
@@ -90,8 +94,6 @@ def multiple_choice_worker(
                 else:
                     raise ValueError("Wrong subscription plan type")
                 
-                
-                
                 quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, incorrect_answer_count, latest, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 
                 timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
@@ -121,24 +123,16 @@ def multiple_choice_worker(
 
     # Failed at every single generation
     if not success_at_least_once:
-        # document_update_query = "UPDATE document SET status = %s WHERE id = %s"
-        # db_manager.execute_query(document_update_query, (DocumentStatus.COMPLETELY_FAILED.value, db_pk))
-        # db_manager.commit()
-        print("COMPLETELY_FAILED")
+        logging.info(f"Multiple choice quiz: COMPLETELY_FAILED")
         return
 
     # Failed at least one chunk question generation
     if failed_at_least_once:
-        # document_update_query = "UPDATE document SET status = %s WHERE id = %s"
-        # db_manager.execute_query(document_update_query, (DocumentStatus.PARTIAL_SUCCESS.value, db_pk))
-        # db_manager.commit()
-        print("PARTIAL_SUCCESS")
+        logging.info(f"Multiple choice quiz: PARTIAL_SUCCESS")
 
     # ALL successful
     else:
-        # document_update_query = "UPDATE document SET status = %s WHERE id = %s"
-        # db_manager.execute_query(document_update_query, (DocumentStatus.PROCESSED.value, db_pk))
-        # db_manager.commit()
-        print("PROCESSED")
+        logging.info(f"Multiple choice quiz: PROCESSED")
+
         
     db_manager.close()

@@ -1,5 +1,6 @@
 import os
 import pytz
+import logging
 from datetime import datetime
 
 from core.database.database_manager import DatabaseManager
@@ -9,6 +10,9 @@ from core.llm.openai import OpenAIChatLLM
 from core.llm.exception import InvalidLLMJsonResponseError
 from core.enums.enum import LLMErrorType, SubscriptionPlanType, QuizQuestionNum, DocumentStatus, QuizType
 from core.llm.utils import fill_message_placeholders, load_prompt_messages
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 def mix_up_worker(
@@ -112,14 +116,14 @@ def mix_up_worker(
 
     # Failed at every single generation
     if not success_at_least_once:
-        print("COMPLETELY_FAILED")
+        logging.info(f"MixUp quiz: COMPLETELY_FAILED")
         return
 
     # Failed at least one chunk question generation
     if failed_at_least_once:
-        print("PARTIAL_SUCCESS")
+        logging.info(f"MixUp quiz: PARTIAL_SUCCESS")
 
     else:  # ALL successful
-        print("PROCESSED")
+        logging.info(f"MixUp quiz: PROCESSED")
         
     db_manager.close()

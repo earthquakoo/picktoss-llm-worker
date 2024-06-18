@@ -6,10 +6,11 @@ from threading import Thread
 from core.s3.s3_client import S3Client
 from core.discord.discord_client import DiscordClient
 from core.llm.openai import OpenAIChatLLM
-from core.database.database_manager import DatabaseManager
 from app.keypoint.keypoint import keypoint_worker
 from app.quiz.mix_up import mix_up_worker
 from app.quiz.multiple_choice import multiple_choice_worker
+from app.quiz.first_today_quiz_set_generator import first_today_quiz_set_generator
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -23,6 +24,7 @@ def handler(event, context):
     s3_key = body["s3_key"]
     db_pk = int(body["db_pk"])
     subscription_plan = body["subscription_plan"]
+    member_id = int(body["member_id"])
     # core client settings
     s3_client = S3Client(access_key=os.environ["PICKTOSS_AWS_ACCESS_KEY"], secret_key=os.environ["PICKTOSS_AWS_SECRET_KEY"], region_name="us-east-1", bucket_name=os.environ["PICKTOSS_S3_BUCKET_NAME"])
     discord_client = DiscordClient(bot_token=os.environ["PICKTOSS_DISCORD_BOT_TOKEN"], channel_id=os.environ["PICKTOSS_DISCORD_CHANNEL_ID"])
@@ -39,5 +41,7 @@ def handler(event, context):
     keypoint.join()
     mix_up.join()
     multiple_choice.join()
+    
+    first_today_quiz_set_generator(member_id=member_id, db_pk=db_pk)
 
     return {"statusCode": 200, "message": "hi"}

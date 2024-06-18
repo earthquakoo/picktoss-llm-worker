@@ -1,5 +1,6 @@
 import os
 import pytz
+import logging
 from datetime import datetime
 
 from core.database.database_manager import DatabaseManager
@@ -9,6 +10,9 @@ from core.llm.openai import OpenAIChatLLM
 from core.llm.exception import InvalidLLMJsonResponseError
 from core.enums.enum import LLMErrorType, SubscriptionPlanType, QuizQuestionNum, DocumentStatus
 from core.llm.utils import fill_message_placeholders, load_prompt_messages
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 def keypoint_worker(
@@ -29,9 +33,10 @@ def keypoint_worker(
     chunks: list[str] = []
     for i in range(0, len(content), CHUNK_SIZE):
         chunks.append(content[i : i + CHUNK_SIZE])
-
-    without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_keypoints.txt") # dev & prod
-    # without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_keypoints.txt") # local
+    # dev & prod
+    without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_keypoints.txt")
+    # local 
+    # without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_keypoints.txt") 
     free_plan_question_expose_count = 0
     total_generated_question_count = 0
 
@@ -110,7 +115,7 @@ def keypoint_worker(
         document_update_query = "UPDATE document SET status = %s WHERE id = %s"
         db_manager.execute_query(document_update_query, (DocumentStatus.COMPLETELY_FAILED.value, db_pk))
         db_manager.commit()
-        print("COMPLETELY_FAILED")
+        logging.info(f"Keypoint: COMPLETELY_FAILED")
         return
 
     # Failed at least one chunk question generation
@@ -118,13 +123,13 @@ def keypoint_worker(
         document_update_query = "UPDATE document SET status = %s WHERE id = %s"
         db_manager.execute_query(document_update_query, (DocumentStatus.PARTIAL_SUCCESS.value, db_pk))
         db_manager.commit()
-        print("PARTIAL_SUCCESS")
+        logging.info(f"Keypoint: PARTIAL_SUCCESS")
 
     else:  # ALL successful
         document_update_query = "UPDATE document SET status = %s WHERE id = %s"
         db_manager.execute_query(document_update_query, (DocumentStatus.PROCESSED.value, db_pk))
         db_manager.commit()
-        print("PROCESSED")
+        logging.info(f"Keypoint: PROCESSED")
         
     
     db_manager.close()

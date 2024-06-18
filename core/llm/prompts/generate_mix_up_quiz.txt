@@ -157,3 +157,12 @@ OS의 분류
         "explanation": "Interface b/w applications and hardware에서 추상화는 Hardware를 다루는 복잡한건 OS가 대행해주고, user 및 program은 에 대한 자세한 내용을 알지 못해도 프로그램을 실행할 수 있도록 해주는 것을 말합니다."
     },
 ]
+
+[%user%]
+{{$note}}
+
+The number of generated question set must be 2 ~ 4.
+And the format must be JSON. Be careful about the format. especially the brackets and the comma.
+한국어로 대답하세요.
+
+응답:
