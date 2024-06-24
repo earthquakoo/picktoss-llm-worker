@@ -34,9 +34,9 @@ def mix_up_worker(
     for i in range(0, len(content), CHUNK_SIZE):
         chunks.append(content[i : i + CHUNK_SIZE])
     # dev & prod
-    without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_mix_up_quiz.txt") 
+    # without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_mix_up_quiz.txt") 
     # local
-    # without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_mix_up_quiz.txt")
+    without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_mix_up_quiz.txt")
     free_plan_question_expose_count = 0
     total_generated_question_count = 0
 
@@ -75,6 +75,9 @@ def mix_up_worker(
             for q_set in resp_dict:
                 question, answer, explanation = q_set["question"], q_set["answer"], q_set["explanation"]
                 incorrect_answer_count = 0
+                
+                question = question.replace("(True/False)", "").strip()
+                question = question.replace("(O/X)", "").strip()
 
                 # To avoid duplication
                 prev_questions.append(question)

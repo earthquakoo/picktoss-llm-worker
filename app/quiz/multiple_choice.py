@@ -35,8 +35,8 @@ def multiple_choice_worker(
         chunks.append(content[i : i + CHUNK_SIZE])
         
     # dev & prod
-    without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_multiple_choice_quiz.txt") 
-    # without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_multiple_choice_quiz.txt") # local
+    # without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_multiple_choice_quiz.txt") 
+    without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_multiple_choice_quiz.txt") # local
     free_plan_question_expose_count = 0
     total_generated_question_count = 0
 
