@@ -34,9 +34,9 @@ def mix_up_worker(
     for i in range(0, len(content), CHUNK_SIZE):
         chunks.append(content[i : i + CHUNK_SIZE])
     # dev & prod
-    # without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_mix_up_quiz.txt") 
+    without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_mix_up_quiz.txt") 
     # local
-    without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_mix_up_quiz.txt")
+    # without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_mix_up_quiz.txt")
     free_plan_question_expose_count = 0
     total_generated_question_count = 0
 
