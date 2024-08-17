@@ -34,7 +34,7 @@ def handler(event, context):
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
 
     get_document_query = f"SELECT * FROM document WHERE id = {db_pk}"
-    document: dict = db_manager(get_document_query)[0]
+    document: dict = db_manager.execute_query(get_document_query)[0]
 
     if document['status'] != "PROCESSING":
         print("Already processed document")
