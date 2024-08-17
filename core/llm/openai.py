@@ -13,15 +13,21 @@ class ChatMessage:
 
 
 class OpenAIChatLLM:
-    def __init__(self, api_key: str, model: str = "gpt-3.5-turbo-0125", temperature: float = 0.3):
+    def __init__(
+        self, 
+        api_key: str, 
+        model: str = "gpt-4o-mini", 
+        temperature: float = 0.3,
+        top_p: float = 0.2
+        ):
         self.async_client = AsyncOpenAI(api_key=api_key)
         self.sync_client = OpenAI(api_key=api_key)
 
-        self.model_kwargs = {"model": model, "temperature": temperature}
+        self.model_kwargs = {"model": model, "temperature": temperature, "top_p": top_p}
 
     async def apredict_json(self, messages: list[ChatMessage]) -> dict:
         extra_params = {}
-        if self.model_kwargs["model"] == "gpt-3.5-turbo-0125":
+        if self.model_kwargs["model"] == "gpt-4o-mini":
             extra_params["response_format"] = {"type": "json_object"}
 
         resp = await self.async_client.chat.completions.create(
@@ -33,7 +39,7 @@ class OpenAIChatLLM:
 
     def predict_json(self, messages: list[ChatMessage]) -> dict:
         extra_params = {}
-        if self.model_kwargs["model"] == "gpt-3.5-turbo-0125":
+        if self.model_kwargs["model"] == "gpt-4o-mini":
             extra_params["response_format"] = {"type": "json_object"}
 
         resp = self.sync_client.chat.completions.create(

@@ -29,7 +29,7 @@ def mix_up_worker(
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
     
     # Generate Questions
-    CHUNK_SIZE = 1100
+    CHUNK_SIZE = 3000
     chunks: list[str] = []
     for i in range(0, len(content), CHUNK_SIZE):
         chunks.append(content[i : i + CHUNK_SIZE])
@@ -95,6 +95,8 @@ def mix_up_worker(
                 elif subscription_plan == SubscriptionPlanType.PRO.value:
                     delivered_count = 1
                 else:
+                    change_outbox_status_query = f"update outbox set status = FAILED where id = {db_pk}"
+                    db_manager.execute_query(change_outbox_status_query)
                     raise ValueError("Wrong subscription plan type")
                 
                 if answer == "incorrect" or answer == "correct":
