@@ -95,8 +95,9 @@ def mix_up_worker(
                 elif subscription_plan == SubscriptionPlanType.PRO.value:
                     delivered_count = 1
                 else:
-                    change_outbox_status_query = f"update outbox set status = FAILED where id = {db_pk}"
+                    change_outbox_status_query = f"UPDATE outbox SET status = FAILED WHERE document_id = {db_pk}"
                     db_manager.execute_query(change_outbox_status_query)
+                    db_manager.commit()
                     raise ValueError("Wrong subscription plan type")
                 
                 if answer == "incorrect" or answer == "correct":

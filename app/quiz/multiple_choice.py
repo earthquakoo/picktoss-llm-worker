@@ -92,8 +92,9 @@ def multiple_choice_worker(
                 elif subscription_plan == SubscriptionPlanType.PRO.value:
                     delivered_count = 1
                 else:
-                    change_outbox_status_query = f"update outbox set status = FAILED where id = {db_pk}"
+                    change_outbox_status_query = f"UPDATE outbox SET status = FAILED WHERE document_id = {db_pk}"
                     db_manager.execute_query(change_outbox_status_query)
+                    db_manager.commit()
                     raise ValueError("Wrong subscription plan type")
                 
                 quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, incorrect_answer_count, latest, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"

@@ -33,12 +33,22 @@ def handler(event, context):
     chat_llm = OpenAIChatLLM(api_key=os.environ["PICKTOSS_OPENAI_API_KEY"], model="gpt-4o-mini")
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
 
-    get_document_query = f"SELECT * FROM document WHERE id = {db_pk}"
-    document: dict = db_manager.execute_query(get_document_query)[0]
+    get_outbox_query = f"SELECT * FROM outbox WHERE document_id = {db_pk}"
+    outbox: dict = db_manager.execute_query(get_outbox_query)
 
-    if document['status'] != "PROCESSING":
-        print("Already processed document")
+    if not outbox:
+        print("Null outbox")
         return 
+
+    if outbox[0]['status'] == "PROCESSING":
+        print("Already processing outbox")
+        return 
+    
+    if outbox[0]['status'] == "WAITING":
+        print("Processing LLM API")
+        update_outbox_query = f"UPDATE outbox SET status = PROCESSING WHERE document_id = {db_pk}"
+        db_manager.execute_query(update_outbox_query)
+        db_manager.commit()
 
     keypoint = Thread(target=keypoint_worker, args=(s3_client, discord_client, chat_llm, s3_key, db_pk, subscription_plan))
     mix_up = Thread(target=mix_up_worker, args=(s3_client, discord_client, chat_llm, s3_key, db_pk, subscription_plan))
