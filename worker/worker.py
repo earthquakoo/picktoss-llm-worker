@@ -18,6 +18,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def handler(event, context):
+    print(event)
     event_info: str = event["Records"][0]["body"]
     body: dict = json.loads(event_info)
     if "s3_key" not in body or "db_pk" not in body or "subscription_plan" not in body:
