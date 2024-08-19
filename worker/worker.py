@@ -34,16 +34,18 @@ def handler(event, context):
     chat_llm = OpenAIChatLLM(api_key=os.environ["PICKTOSS_OPENAI_API_KEY"], model="gpt-4o-mini")
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
 
+    time.sleep(60)
+
     get_outbox_query = f"SELECT * FROM outbox WHERE document_id = {db_pk}"
     outbox = db_manager.execute_query(get_outbox_query)
 
     if not outbox:
-        print("Null outbox")
-        return {"StatusCode": 202}
+        print("There is no data in the outbox table.")
+        return {"StatusCode": 200, "message": "There is no data in the outbox table."}
 
     if outbox[0]['status'] == "PROCESSING":
-        print("Already processing outbox")
-        return {"StatusCode": 202}
+        print("Data that is already being processed.")
+        return {"StatusCode": 200, "message": "Data that is already being processed."}
     
     if outbox[0]['status'] == "WAITING":
         print("Processing LLM API")
