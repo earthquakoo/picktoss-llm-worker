@@ -46,7 +46,7 @@ def handler(event, context):
     
     if outbox[0]['status'] == "WAITING":
         print("Processing LLM API")
-        update_outbox_query = f"UPDATE outbox SET status = PROCESSING WHERE document_id = {db_pk}"
+        update_outbox_query = f"UPDATE outbox SET status = 'PROCESSING' WHERE document_id = {db_pk}"
         db_manager.execute_query(update_outbox_query)
         db_manager.commit()
 

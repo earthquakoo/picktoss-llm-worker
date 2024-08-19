@@ -23,6 +23,7 @@ def multiple_choice_worker(
     db_pk: int,
     subscription_plan: str
     ):
+    print("Start Multiple choice Worker")
     bucket_obj = s3_client.get_object(key=s3_key)
     content = bucket_obj.decode_content_str()
     
@@ -92,7 +93,7 @@ def multiple_choice_worker(
                 elif subscription_plan == SubscriptionPlanType.PRO.value:
                     delivered_count = 1
                 else:
-                    change_outbox_status_query = f"UPDATE outbox SET status = FAILED WHERE document_id = {db_pk}"
+                    change_outbox_status_query = f"UPDATE outbox SET status = 'FAILED' WHERE document_id = {db_pk}"
                     db_manager.execute_query(change_outbox_status_query)
                     db_manager.commit()
                     raise ValueError("Wrong subscription plan type")
@@ -139,3 +140,4 @@ def multiple_choice_worker(
 
         
     db_manager.close()
+    print("End Multiple choice Worker")
