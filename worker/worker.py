@@ -35,15 +35,15 @@ def handler(event, context):
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
 
     get_outbox_query = f"SELECT * FROM outbox WHERE document_id = {db_pk}"
-    outbox: dict = db_manager.execute_query(get_outbox_query)
+    outbox = db_manager.execute_query(get_outbox_query)
 
     if not outbox:
         print("Null outbox")
-        return 
+        return {"StatusCode": 202}
 
     if outbox[0]['status'] == "PROCESSING":
         print("Already processing outbox")
-        return 
+        return {"StatusCode": 202}
     
     if outbox[0]['status'] == "WAITING":
         print("Processing LLM API")
