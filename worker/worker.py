@@ -34,7 +34,7 @@ def handler(event, context):
     chat_llm = OpenAIChatLLM(api_key=os.environ["PICKTOSS_OPENAI_API_KEY"], model="gpt-4o-mini")
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
 
-    time.sleep(60)
+    time.sleep(300)
 
     get_outbox_query = f"SELECT * FROM outbox WHERE document_id = {db_pk}"
     outbox = db_manager.execute_query(get_outbox_query)
