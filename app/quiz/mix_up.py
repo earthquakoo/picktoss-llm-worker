@@ -8,7 +8,7 @@ from core.s3.s3_client import S3Client
 from core.discord.discord_client import DiscordClient
 from core.llm.openai import OpenAIChatLLM
 from core.llm.exception import InvalidLLMJsonResponseError
-from core.enums.enum import LLMErrorType, SubscriptionPlanType, QuizQuestionNum, DocumentStatus, QuizType
+from core.enums.enum import LLMErrorType, DocumentStatus, QuizType
 from core.llm.utils import fill_message_placeholders, load_prompt_messages
 
 
@@ -21,7 +21,7 @@ def mix_up_worker(
     chat_llm: OpenAIChatLLM,
     s3_key: str,
     db_pk: int,
-    subscription_plan: str
+    quiz_count: int
     ):
     print("Start Mix-up Worker")
     bucket_obj = s3_client.get_object(key=s3_key)
@@ -30,15 +30,16 @@ def mix_up_worker(
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
     
     # Generate Questions
-    CHUNK_SIZE = 3000
+    CHUNK_SIZE = 1000
     chunks: list[str] = []
     for i in range(0, len(content), CHUNK_SIZE):
         chunks.append(content[i : i + CHUNK_SIZE])
     # dev & prod
-    without_placeholder_messages = load_prompt_messages("/var/task/core/llm/prompts/generate_mix_up_quiz.txt") 
+    without_placeholder_messages = load_prompt_messages(
+        prompt_path="/var/task/core/llm/prompts/generate_mix_up_quiz.txt", quiz_count=quiz_count, placeholder="quiz_count") 
     # local
-    # without_placeholder_messages = load_prompt_messages("core/llm/prompts/generate_mix_up_quiz.txt")
-    free_plan_question_expose_count = 0
+    # without_placeholder_messages = load_prompt_messages(
+    #     prompt_path="core/llm/prompts/generate_mix_up_quiz.txt", quiz_count=quiz_count, placeholder="quiz_count")
     total_generated_question_count = 0
 
     success_at_least_once = False
@@ -48,6 +49,7 @@ def mix_up_worker(
     for chunk in chunks:
         prev_question_str = '\n'.join([q for q in prev_questions])
         messages = fill_message_placeholders(messages=without_placeholder_messages, placeholders={"note": chunk, "prev_questions": prev_question_str})
+        print(f"replace_message: {messages}")
         try:
             resp_dict = chat_llm.predict_json(messages)
         except InvalidLLMJsonResponseError as e:
@@ -74,8 +76,10 @@ def mix_up_worker(
 
         try:
             for q_set in resp_dict:
+                print(q_set)
                 question, answer, explanation = q_set["question"], q_set["answer"], q_set["explanation"]
                 incorrect_answer_count = 0
+                delivered_count = 0
                 
                 question = question.replace("(True/False)", "").strip()
                 question = question.replace("(O/X)", "").strip()
@@ -87,26 +91,20 @@ def mix_up_worker(
 
                 total_generated_question_count += 1
 
-                if subscription_plan == SubscriptionPlanType.FREE.value:
-                    if free_plan_question_expose_count >= QuizQuestionNum.FREE_PLAN_QUIZ_QUESTION_NUM.value:
-                        delivered_count = 0
-                    else:
-                        delivered_count = 1
-                        free_plan_question_expose_count += 1
-                elif subscription_plan == SubscriptionPlanType.PRO.value:
-                    delivered_count = 1
-                else:
-                    change_outbox_status_query = f"UPDATE outbox SET status = 'FAILED' WHERE document_id = {db_pk}"
-                    db_manager.execute_query(change_outbox_status_query)
-                    db_manager.commit()
-                    raise ValueError("Wrong subscription plan type")
+                # change_outbox_status_query = f"UPDATE outbox SET status = 'FAILED' WHERE document_id = {db_pk}"
+                # db_manager.execute_query(change_outbox_status_query)
+                # db_manager.commit()
                 
                 if answer == "incorrect" or answer == "correct":
-                
-                    question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, bookmark, incorrect_answer_count, latest, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                    question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, incorrect_answer_count, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
                     timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
-                    db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, False, incorrect_answer_count, True, db_pk, timestamp, timestamp))
+                    db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, incorrect_answer_count, db_pk, timestamp, timestamp))
                     db_manager.commit()
+                else:
+                    # 여기서에서 만약 quiz answer이 incorrect or correct 형식이 아니면 에러 메시지 남기기
+                    # db에서 결제 record 남기는 형식처럼?
+                    print("정답 오류")
+                    continue
 
         except Exception as e:
             discord_client.report_llm_error(

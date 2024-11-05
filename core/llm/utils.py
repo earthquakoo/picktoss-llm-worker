@@ -1,10 +1,11 @@
 from core.llm.openai import ChatMessage
 
 
-def load_prompt_messages(prompt_path: str) -> list[ChatMessage]:
+def load_prompt_messages(prompt_path: str, quiz_count: int, placeholder: str) -> list[ChatMessage]:
     with open(prompt_path, encoding="utf-8") as f:
         content = f.read().strip()
 
+    content = content.replace("{{$%s}}" % placeholder, str(quiz_count))
     parts = content.split("[%")
     messages = []
 
