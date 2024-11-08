@@ -9,7 +9,7 @@ from core.discord.discord_client import DiscordClient
 from core.llm.openai import OpenAIChatLLM
 from core.llm.exception import InvalidLLMJsonResponseError
 from core.enums.enum import LLMErrorType, QuizQuestionNum, DocumentStatus, QuizType
-from core.llm.utils import fill_message_placeholders, load_prompt_messages
+from core.llm.utils import fill_message_placeholders, load_prompt_messages, markdown_content_splitter
 
 
 logging.basicConfig(level=logging.INFO)
@@ -28,12 +28,9 @@ def multiple_choice_worker(
     content = bucket_obj.decode_content_str()
     
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
-
+    
     # Generate Questions
-    CHUNK_SIZE = 1000
-    chunks: list[str] = []
-    for i in range(0, len(content), CHUNK_SIZE):
-        chunks.append(content[i : i + CHUNK_SIZE])
+    content_splits = markdown_content_splitter(content)
         
     # dev & prod
     without_placeholder_messages = load_prompt_messages(
@@ -46,17 +43,20 @@ def multiple_choice_worker(
     success_at_least_once = False
     failed_at_least_once = False
 
-    prev_questions: list[str] = []
-    for chunk in chunks:
-        prev_question_str = '\n'.join([q for q in prev_questions])
-        messages = fill_message_placeholders(messages=without_placeholder_messages, placeholders={"note": chunk, "prev_questions": prev_question_str})
+    for content_split in content_splits:
+        print(f"content_split: {content_split}")
+        if total_generated_question_count >= quiz_count:
+            break
+
+        messages = fill_message_placeholders(messages=without_placeholder_messages, placeholders={"note": content_split})
         try:
             resp_dict = chat_llm.predict_json(messages)
+            print(resp_dict)
         except InvalidLLMJsonResponseError as e:
             discord_client.report_llm_error(
                 task="Question Generation",
                 error_type=LLMErrorType.INVALID_JSON_FORMAT,
-                document_content=chunk,
+                document_content=content_split,
                 llm_response=e.llm_response,
                 error_message="LLM Response is not JSON-decodable",
                 info=f"* s3_key: `{s3_key}`\n* document_id: `{db_pk}`",
@@ -67,7 +67,7 @@ def multiple_choice_worker(
             discord_client.report_llm_error(
                 task="Question Generation",
                 error_type=LLMErrorType.GENERAL,
-                document_content=chunk,
+                document_content=content_split,
                 error_message="Failed to generate questions",
                 info=f"* s3_key: `{s3_key}`\n* document_id: `{db_pk}`",
             )
@@ -76,17 +76,12 @@ def multiple_choice_worker(
 
         try:
             for q_set in resp_dict:
-                print(q_set)
+                if total_generated_question_count >= quiz_count:
+                    break
+
                 question, answer, options, explanation = q_set["question"], q_set["answer"], q_set["options"], q_set["explanation"]
                 incorrect_answer_count = 0
                 delivered_count = 0
-
-                # To avoid duplication
-                prev_questions.append(question)
-                if len(prev_questions) == 6:
-                    prev_questions.pop(0)
-
-                total_generated_question_count += 1
                 
                 quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, incorrect_answer_count, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 
@@ -95,6 +90,8 @@ def multiple_choice_worker(
                 db_manager.commit()
                 quiz_id = db_manager.last_insert_id()
                 
+                total_generated_question_count += 1
+
                 if len(options) == 4:
                     for option in options:
                         option_insert_query = "INSERT INTO options (options, quiz_id, created_at, updated_at) VALUES (%s, %s, %s, %s)"
@@ -109,7 +106,7 @@ def multiple_choice_worker(
             discord_client.report_llm_error(
                 task="Question Generation",
                 error_type=LLMErrorType.GENERAL,
-                document_content=chunk,
+                document_content=content_split,
                 error_message=f"LLM Response is JSON decodable but does not have 'question' and 'answer' keys.\nresp_dict: {resp_dict}",
                 info=f"* s3_key: `{s3_key}`\n* document_id: `{db_pk}`",
             )
