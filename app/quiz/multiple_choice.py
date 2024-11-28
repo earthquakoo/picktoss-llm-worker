@@ -28,7 +28,7 @@ def multiple_choice_worker(
     content = bucket_obj.decode_content_str()
     
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
-    
+     
     # Generate Questions
     content_splits = markdown_content_splitter(content)
         
@@ -117,15 +117,24 @@ def multiple_choice_worker(
 
     # Failed at every single generation
     if not success_at_least_once:
+        document_update_query = f"UPDATE document SET status = 'COMPLETELY_FAILED' WHERE id = {db_pk}"
+        db_manager.execute_query(document_update_query)
+        db_manager.commit()
         logging.info(f"Multiple choice quiz: COMPLETELY_FAILED")
         return
 
     # Failed at least one chunk question generation
     if failed_at_least_once:
+        document_update_query = f"UPDATE document SET status = 'PARTIAL_SUCCESS' WHERE id = {db_pk}"
+        db_manager.execute_query(document_update_query)
+        db_manager.commit()
         logging.info(f"Multiple choice quiz: PARTIAL_SUCCESS")
 
     # ALL successful
     else:
+        document_update_query = f"UPDATE document SET status = 'PROCESSED' WHERE id = {db_pk}"
+        db_manager.execute_query(document_update_query)
+        db_manager.commit()
         logging.info(f"Multiple choice quiz: PROCESSED")
 
         
