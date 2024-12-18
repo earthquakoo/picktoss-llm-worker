@@ -41,6 +41,8 @@ def multiple_choice_worker(
     #     prompt_path="core/llm/prompts/generate_multiple_choice_quiz.txt", quiz_count=quiz_count, placeholder="quiz_count")
     total_quiz_count = 0
 
+    timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
+
     success_at_least_once = False
     failed_at_least_once = False
 
@@ -86,7 +88,6 @@ def multiple_choice_worker(
                 
                 quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, incorrect_answer_count, is_review_needed, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 
-                timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
                 db_manager.execute_query(quiz_insert_query, (question, answer, explanation, delivered_count, QuizType.MULTIPLE_CHOICE.value, incorrect_answer_count, False, db_pk, timestamp, timestamp))
                 db_manager.commit()
                 quiz_id = db_manager.last_insert_id()
@@ -117,6 +118,20 @@ def multiple_choice_worker(
         success_at_least_once = True
     
     if total_quiz_count != quiz_count:
+        
+        select_query = f"SELECT id FROM quiz WHERE document_id = {db_pk} AND created_at = '{timestamp}'"
+        quiz_ids = db_manager.execute_query(select_query)
+
+        if quiz_ids:
+            ids = ','.join(str(row['id']) for row in quiz_ids)
+            delete_query = f"DELETE FROM options WHERE quiz_id IN ({ids})"
+            db_manager.execute_query(delete_query)
+            db_manager.commit()
+
+        quiz_delete_query = f"DELETE FROM quiz WHERE document_id = {db_pk} AND created_at = '{timestamp}'"
+        db_manager.execute_query(quiz_delete_query)
+        db_manager.commit()
+
         star_select_query = f"SELECT * FROM star WHERE member_id = {member_id}"
         star = db_manager.execute_query(star_select_query)
         cur_star_count = star[0]['star']

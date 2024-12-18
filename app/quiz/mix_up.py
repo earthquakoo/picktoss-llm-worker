@@ -43,6 +43,7 @@ def mix_up_worker(
     success_at_least_once = False
     failed_at_least_once = False
 
+    timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
     for content_split in content_splits:
         print(f"content_split: {content_split}")
         if total_quiz_count >= quiz_count:
@@ -92,7 +93,6 @@ def mix_up_worker(
                 
                 if answer == "incorrect" or answer == "correct":
                     question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, incorrect_answer_count, is_review_needed, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                    timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
                     db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, incorrect_answer_count, False, db_pk, timestamp, timestamp))
                     db_manager.commit()
 
@@ -119,6 +119,10 @@ def mix_up_worker(
     print(f"Total quiz count: {total_quiz_count}")
     
     if total_quiz_count != quiz_count:
+        quiz_delete_query = f"DELETE FROM quiz WHERE document_id = {db_pk} AND created_at = '{timestamp}'"
+        db_manager.execute_query(quiz_delete_query)
+        db_manager.commit()
+
         star_select_query = f"SELECT * FROM star WHERE member_id = {member_id}"
         star = db_manager.execute_query(star_select_query)
         cur_star_count = star[0]['star']
