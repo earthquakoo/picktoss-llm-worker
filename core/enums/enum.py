@@ -24,3 +24,13 @@ class DocumentStatus(Enum):
 class QuizType(Enum):
     MIX_UP = "MIX_UP"
     MULTIPLE_CHOICE = "MULTIPLE_CHOICE"
+
+class TransactionType(Enum):
+    DEPOSIT = "DEPOSIT"
+    WITHDRAWAL = "WITHDRAWAL"
+
+class Source(Enum):
+    REWARD = "REWARD"
+    PAYMENT = "PAYMENT"
+    SERVICE = "SERVICE"
+    SIGN_UP = "SIGN_UP"

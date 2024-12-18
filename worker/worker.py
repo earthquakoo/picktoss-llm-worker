@@ -13,6 +13,7 @@ from app.quiz.multiple_choice import multiple_choice_worker
 logging.basicConfig(level=logging.INFO)
 
 def handler(event, context):
+    
     print(event)
     event_info: str = event["Records"][0]["body"]
     body: dict = json.loads(event_info)
@@ -23,6 +24,7 @@ def handler(event, context):
     db_pk = int(body["db_pk"])
     quiz_type = body["quiz_type"]
     quiz_count = body["quiz_count"]
+    member_id = body["member_id"]
 
     # core client settings
     s3_client = S3Client(access_key=os.environ["PICKTOSS_AWS_ACCESS_KEY"], secret_key=os.environ["PICKTOSS_AWS_SECRET_KEY"], region_name="us-east-1", bucket_name=os.environ["PICKTOSS_S3_BUCKET_NAME"])
@@ -48,9 +50,9 @@ def handler(event, context):
         db_manager.commit()
 
     if quiz_type == "MIX_UP":
-        mix_up_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, quiz_count)
+        mix_up_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, quiz_count, member_id)
     elif quiz_type == "MULTIPLE_CHOICE":
-        multiple_choice_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, quiz_count)
+        multiple_choice_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, quiz_count, member_id)
     else:
         ## exception
         return 
