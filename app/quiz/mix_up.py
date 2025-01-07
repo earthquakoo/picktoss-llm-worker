@@ -81,7 +81,7 @@ def mix_up_worker(
                     break
 
                 question, answer, explanation = q_set["question"], q_set["answer"], q_set["explanation"]
-                incorrect_answer_count = 0
+                correct_answer_count = 0
                 delivered_count = 0
                 
                 question = question.replace("(True/False)", "").strip()
@@ -92,8 +92,8 @@ def mix_up_worker(
                 # db_manager.commit()
                 
                 if answer == "incorrect" or answer == "correct":
-                    question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, incorrect_answer_count, is_review_needed, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                    db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, incorrect_answer_count, False, db_pk, timestamp, timestamp))
+                    question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, correct_answer_count, is_review_needed, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                    db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, correct_answer_count, False, db_pk, timestamp, timestamp))
                     db_manager.commit()
 
                     total_quiz_count += 1
