@@ -48,3 +48,7 @@ class DatabaseManager:
         except Exception as e:
             print("Error fetching last insert id:", e)
             return None
+        
+    def rollback(self):
+        if self.connection:
+            self.connection.rollback()

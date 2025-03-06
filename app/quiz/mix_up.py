@@ -94,8 +94,6 @@ def mix_up_worker(
                 if answer == "incorrect" or answer == "correct":
                     question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, correct_answer_count, is_review_needed, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                     db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, correct_answer_count, False, db_pk, timestamp, timestamp))
-                    db_manager.commit()
-
                     total_quiz_count += 1
                 else:
                     # 여기서에서 만약 quiz answer이 incorrect or correct 형식이 아니면 에러 메시지 남기기
@@ -119,9 +117,7 @@ def mix_up_worker(
     print(f"Total quiz count: {total_quiz_count}")
     
     if total_quiz_count != quiz_count:
-        quiz_delete_query = f"DELETE FROM quiz WHERE document_id = {db_pk} AND created_at = '{timestamp}'"
-        db_manager.execute_query(quiz_delete_query)
-        db_manager.commit()
+        db_manager.rollback()
 
         star_select_query = f"SELECT * FROM star WHERE member_id = {member_id}"
         star = db_manager.execute_query(star_select_query)
@@ -160,6 +156,7 @@ def mix_up_worker(
         db_manager.execute_query(document_update_query)
         db_manager.commit()
         logging.info(f"MixUp quiz: PROCESSED")
-        
+    
+    db_manager.commit()
     db_manager.close()
     print("End Mix-up Worker")

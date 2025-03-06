@@ -89,7 +89,6 @@ def multiple_choice_worker(
                 quiz_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, correct_answer_count, is_review_needed, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 
                 db_manager.execute_query(quiz_insert_query, (question, answer, explanation, delivered_count, QuizType.MULTIPLE_CHOICE.value, correct_answer_count, False, db_pk, timestamp, timestamp))
-                db_manager.commit()
                 quiz_id = db_manager.last_insert_id()
                 
                 total_quiz_count += 1
@@ -97,9 +96,7 @@ def multiple_choice_worker(
                 if len(options) == 4:
                     for option in options:
                         option_insert_query = "INSERT INTO options (options, quiz_id, created_at, updated_at) VALUES (%s, %s, %s, %s)"
-                        db_manager.execute_query(option_insert_query, (option, quiz_id, timestamp, timestamp))
-                    
-                    db_manager.commit()
+                        db_manager.execute_query(option_insert_query, (option, quiz_id, timestamp, timestamp))                    
                 else:
                     # options가 4개가 아니라면 record에 기록하기
                     continue
@@ -118,19 +115,7 @@ def multiple_choice_worker(
         success_at_least_once = True
     
     if total_quiz_count != quiz_count:
-        
-        select_query = f"SELECT id FROM quiz WHERE document_id = {db_pk} AND created_at = '{timestamp}'"
-        quiz_ids = db_manager.execute_query(select_query)
-
-        if quiz_ids:
-            ids = ','.join(str(row['id']) for row in quiz_ids)
-            delete_query = f"DELETE FROM options WHERE quiz_id IN ({ids})"
-            db_manager.execute_query(delete_query)
-            db_manager.commit()
-
-        quiz_delete_query = f"DELETE FROM quiz WHERE document_id = {db_pk} AND created_at = '{timestamp}'"
-        db_manager.execute_query(quiz_delete_query)
-        db_manager.commit()
+        db_manager.rollback()
 
         star_select_query = f"SELECT * FROM star WHERE member_id = {member_id}"
         star = db_manager.execute_query(star_select_query)
@@ -172,6 +157,6 @@ def multiple_choice_worker(
         db_manager.commit()
         logging.info(f"Multiple choice quiz: PROCESSED")
 
-        
+    db_manager.commit()
     db_manager.close()
     print("End Multiple choice Worker")
