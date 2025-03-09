@@ -49,6 +49,10 @@ def handler(event, context):
         db_manager.execute_query(update_outbox_query)
         db_manager.commit()
 
+    update_quiz_is_latest_query = f"UPDATE quiz SET is_latest = false WHERE document_id = {db_pk}"
+    db_manager.execute_query(update_quiz_is_latest_query)
+    db_manager.commit()
+
     if quiz_type == "MIX_UP":
         mix_up_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, quiz_count, member_id)
     elif quiz_type == "MULTIPLE_CHOICE":
