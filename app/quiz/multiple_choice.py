@@ -134,7 +134,8 @@ def multiple_choice_worker(
         logging.info(f"QUIZ_GENERATION_ERROR")
         return
 
-    
+    db_manager.commit()
+
     # Failed at every single generation
     if not success_at_least_once:
         document_update_query = f"UPDATE document SET quiz_generation_status = 'COMPLETELY_FAILED' WHERE id = {db_pk}"
@@ -157,6 +158,5 @@ def multiple_choice_worker(
         db_manager.commit()
         logging.info(f"Multiple choice quiz: PROCESSED")
 
-    db_manager.commit()
     db_manager.close()
     print("End Multiple choice Worker")
