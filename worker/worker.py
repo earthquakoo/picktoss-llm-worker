@@ -23,7 +23,7 @@ def handler(event, context):
     s3_key = body["s3_key"]
     db_pk = int(body["db_pk"])
     quiz_type = body["quiz_type"]
-    quiz_count = body["quiz_count"]
+    star_count = body["star_count"]
     member_id = body["member_id"]
 
     # core client settings
@@ -54,9 +54,9 @@ def handler(event, context):
     db_manager.commit()
 
     if quiz_type == "MIX_UP":
-        mix_up_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, quiz_count, member_id)
+        mix_up_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, member_id, star_count)
     elif quiz_type == "MULTIPLE_CHOICE":
-        multiple_choice_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, quiz_count, member_id)
+        multiple_choice_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, member_id, star_count)
     else:
         ## exception
         return 

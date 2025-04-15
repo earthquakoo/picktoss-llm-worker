@@ -21,8 +21,8 @@ def mix_up_worker(
     chat_llm: OpenAIChatLLM,
     s3_key: str,
     db_pk: int,
-    quiz_count: int,
-    member_id: int
+    member_id: int,
+    star_count: int
     ):
     print("Start Mix-up Worker")
     bucket_obj = s3_client.get_object(key=s3_key)
@@ -33,12 +33,9 @@ def mix_up_worker(
     content_splits = markdown_content_splitter(content)
 
     # dev & prod
-    without_placeholder_messages = load_prompt_messages(
-        prompt_path="/var/task/core/llm/prompts/generate_mix_up_quiz.txt", quiz_count=quiz_count, placeholder="quiz_count") 
+    without_placeholder_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_mix_up_quiz.txt") 
     # local
-    # without_placeholder_messages = load_prompt_messages(
-    #     prompt_path="core/llm/prompts/generate_mix_up_quiz.txt", quiz_count=quiz_count, placeholder="quiz_count")
-    total_quiz_count = 0
+    # without_placeholder_messages = load_prompt_messages(prompt_path="core/llm/prompts/generate_mix_up_quiz.txt")
 
     success_at_least_once = False
     failed_at_least_once = False
@@ -46,8 +43,6 @@ def mix_up_worker(
     timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
     for content_split in content_splits:
         print(f"content_split: {content_split}")
-        if total_quiz_count >= quiz_count:
-            break
 
         messages = fill_message_placeholders(messages=without_placeholder_messages, placeholders={"note": content_split})
         try:
@@ -77,8 +72,6 @@ def mix_up_worker(
 
         try:
             for q_set in resp_dict:
-                if total_quiz_count >= quiz_count:
-                    break
 
                 question, answer, explanation = q_set["question"], q_set["answer"], q_set["explanation"]
                 correct_answer_count = 0
@@ -86,15 +79,10 @@ def mix_up_worker(
                 
                 question = question.replace("(True/False)", "").strip()
                 question = question.replace("(O/X)", "").strip()
-
-                # change_outbox_status_query = f"UPDATE outbox SET status = 'FAILED' WHERE document_id = {db_pk}"
-                # db_manager.execute_query(change_outbox_status_query)
-                # db_manager.commit()
                 
                 if answer == "incorrect" or answer == "correct":
                     question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, correct_answer_count, is_review_needed, is_latest, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                     db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, correct_answer_count, False, True, db_pk, timestamp, timestamp))
-                    total_quiz_count += 1
                 else:
                     # 여기서에서 만약 quiz answer이 incorrect or correct 형식이 아니면 에러 메시지 남기기
                     # db에서 결제 record 남기는 형식처럼?
@@ -113,10 +101,11 @@ def mix_up_worker(
             continue
 
         success_at_least_once = True
-    
-    print(f"Total quiz count: {total_quiz_count}")
-    
-    if total_quiz_count != quiz_count:
+
+    db_manager.commit()
+
+    # Failed at every single generation
+    if not success_at_least_once:
         db_manager.rollback()
 
         star_select_query = f"SELECT * FROM star WHERE member_id = {member_id}"
@@ -124,26 +113,16 @@ def mix_up_worker(
         cur_star_count = star[0]['star']
         star_id = star[0]['id']
 
-        star_update_query = f"UPDATE star SET star = star + {quiz_count} WHERE member_id = {member_id}"
+        star_update_query = f"UPDATE star SET star = star + {star_count} WHERE member_id = {member_id}"
         star_history_update_query = "INSERT INTO star_history (description, change_amount, balance_after, transaction_type, source, star_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
         document_update_query = f"UPDATE document SET quiz_generation_status = 'QUIZ_GENERATION_ERROR' WHERE id = {db_pk}"
         
         db_manager.execute_query(star_update_query)
-        db_manager.execute_query(star_history_update_query, ("퀴즈 오류로 인한 별 반환", quiz_count, cur_star_count + quiz_count, TransactionType.DEPOSIT.value, Source.SERVICE.value, star_id, timestamp, timestamp))
+        db_manager.execute_query(star_history_update_query, ("퀴즈 오류로 인한 별 반환", star_count, cur_star_count + star_count, TransactionType.DEPOSIT.value, Source.SERVICE.value, star_id, timestamp, timestamp))
         db_manager.execute_query(document_update_query)
         
         db_manager.commit()
         logging.info(f"QUIZ_GENERATION_ERROR")
-        return
-    
-    db_manager.commit()
-
-    # Failed at every single generation
-    if not success_at_least_once:
-        document_update_query = f"UPDATE document SET quiz_generation_status = 'COMPLETELY_FAILED' WHERE id = {db_pk}"
-        db_manager.execute_query(document_update_query)
-        db_manager.commit()
-        logging.info(f"MixUp quiz: COMPLETELY_FAILED")
         return
 
     # Failed at least one chunk question generation

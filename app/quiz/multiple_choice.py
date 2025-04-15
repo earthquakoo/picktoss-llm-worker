@@ -1,6 +1,7 @@
 import os
 import pytz
 import logging
+import time
 from datetime import datetime
 
 from core.database.database_manager import DatabaseManager
@@ -21,10 +22,11 @@ def multiple_choice_worker(
     chat_llm: OpenAIChatLLM,
     s3_key: str,
     db_pk: int,
-    quiz_count: int,
-    member_id: int
+    member_id: int,
+    star_count: int
     ):
     print("Start Multiple choice Worker")
+    start_time = time.time()
     bucket_obj = s3_client.get_object(key=s3_key)
     content = bucket_obj.decode_content_str()
     
@@ -34,12 +36,9 @@ def multiple_choice_worker(
     content_splits = markdown_content_splitter(content)
         
     # dev & prod
-    without_placeholder_messages = load_prompt_messages(
-        prompt_path="/var/task/core/llm/prompts/generate_multiple_choice_quiz.txt", quiz_count=quiz_count, placeholder="quiz_count") 
+    without_placeholder_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_multiple_choice_quiz.txt") 
     # local
-    # without_placeholder_messages = load_prompt_messages(
-    #     prompt_path="core/llm/prompts/generate_multiple_choice_quiz.txt", quiz_count=quiz_count, placeholder="quiz_count")
-    total_quiz_count = 0
+    # without_placeholder_messages = load_prompt_messages(prompt_path="core/llm/prompts/generate_multiple_choice_quiz.txt")
 
     timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
 
@@ -48,8 +47,6 @@ def multiple_choice_worker(
 
     for content_split in content_splits:
         print(f"content_split: {content_split}")
-        if total_quiz_count >= quiz_count:
-            break
 
         messages = fill_message_placeholders(messages=without_placeholder_messages, placeholders={"note": content_split})
         try:
@@ -79,8 +76,6 @@ def multiple_choice_worker(
 
         try:
             for q_set in resp_dict:
-                if total_quiz_count >= quiz_count:
-                    break
 
                 question, answer, options, explanation = q_set["question"], q_set["answer"], q_set["options"], q_set["explanation"]
                 correct_answer_count = 0
@@ -90,8 +85,6 @@ def multiple_choice_worker(
                 
                 db_manager.execute_query(quiz_insert_query, (question, answer, explanation, delivered_count, QuizType.MULTIPLE_CHOICE.value, correct_answer_count, False, True, db_pk, timestamp, timestamp))
                 quiz_id = db_manager.last_insert_id()
-                
-                total_quiz_count += 1
 
                 if len(options) == 4:
                     for option in options:
@@ -113,8 +106,11 @@ def multiple_choice_worker(
             continue
 
         success_at_least_once = True
-    
-    if total_quiz_count != quiz_count:
+
+    db_manager.commit()
+
+    # Failed at every single generation
+    if not success_at_least_once:
         db_manager.rollback()
 
         star_select_query = f"SELECT * FROM star WHERE member_id = {member_id}"
@@ -122,26 +118,16 @@ def multiple_choice_worker(
         cur_star_count = star[0]['star']
         star_id = star[0]['id']
 
-        star_update_query = f"UPDATE star SET star = star + {quiz_count} WHERE member_id = {member_id}"
+        star_update_query = f"UPDATE star SET star = star + {star_count} WHERE member_id = {member_id}"
         star_history_update_query = "INSERT INTO star_history (description, change_amount, balance_after, transaction_type, source, star_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
         document_update_query = f"UPDATE document SET quiz_generation_status = 'QUIZ_GENERATION_ERROR' WHERE id = {db_pk}"
         
         db_manager.execute_query(star_update_query)
-        db_manager.execute_query(star_history_update_query, ("퀴즈 오류로 인한 별 반환", quiz_count, cur_star_count + quiz_count, TransactionType.DEPOSIT.value, Source.SERVICE.value, star_id, timestamp, timestamp))
+        db_manager.execute_query(star_history_update_query, ("퀴즈 오류로 인한 별 반환", star_count, cur_star_count + star_count, TransactionType.DEPOSIT.value, Source.SERVICE.value, star_id, timestamp, timestamp))
         db_manager.execute_query(document_update_query)
         
         db_manager.commit()
-        logging.info(f"QUIZ_GENERATION_ERROR")
-        return
-
-    db_manager.commit()
-
-    # Failed at every single generation
-    if not success_at_least_once:
-        document_update_query = f"UPDATE document SET quiz_generation_status = 'COMPLETELY_FAILED' WHERE id = {db_pk}"
-        db_manager.execute_query(document_update_query)
-        db_manager.commit()
-        logging.info(f"Multiple choice quiz: COMPLETELY_FAILED")
+        logging.info(f"Multiple choice quiz: QUIZ_GENERATION_ERROR")
         return
 
     # Failed at least one chunk question generation
@@ -159,4 +145,6 @@ def multiple_choice_worker(
         logging.info(f"Multiple choice quiz: PROCESSED")
 
     db_manager.close()
+    end_time = time.time()
+    print(f"퀴즈 생성 함수 걸린 시간: {end_time - start_time}")
     print("End Multiple choice Worker")
