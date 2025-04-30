@@ -21,7 +21,7 @@ def handler(event, context):
         raise ValueError(f"s3_key and db_pk must be provided. event: {event}, context: {context}")
     
     s3_key = body["s3_key"]
-    db_pk = int(body["document_id"])
+    db_pk = int(body["db_pk"])
     quiz_type = body["quiz_type"]
     star_count = body["star_count"]
     member_id = body["member_id"]
