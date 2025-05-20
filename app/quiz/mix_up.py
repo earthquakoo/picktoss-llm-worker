@@ -115,11 +115,13 @@ def mix_up_worker(
 
         star_update_query = f"UPDATE star SET star = star + {star_count} WHERE member_id = {member_id}"
         star_history_update_query = "INSERT INTO star_history (description, change_amount, balance_after, transaction_type, source, star_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        document_update_query = f"UPDATE document SET quiz_generation_status = 'QUIZ_GENERATION_ERROR' WHERE id = {db_pk}"
+        document_status_update_query = f"UPDATE document SET quiz_generation_status = 'QUIZ_GENERATION_ERROR' WHERE id = {db_pk}"
+        documnet_is_public_update_query = f"UPDATE document SET is_public = false WHERE id = {db_pk}"
         
         db_manager.execute_query(star_update_query)
         db_manager.execute_query(star_history_update_query, ("퀴즈 오류로 인한 별 반환", star_count, cur_star_count + star_count, TransactionType.DEPOSIT.value, Source.SERVICE.value, star_id, timestamp, timestamp))
-        db_manager.execute_query(document_update_query)
+        db_manager.execute_query(document_status_update_query)
+        db_manager.execute_query(documnet_is_public_update_query)
         
         db_manager.commit()
         logging.info(f"QUIZ_GENERATION_ERROR")
@@ -127,14 +129,14 @@ def mix_up_worker(
 
     # Failed at least one chunk question generation
     if failed_at_least_once:
-        document_update_query = f"UPDATE document SET quiz_generation_status = 'PARTIAL_SUCCESS' WHERE id = {db_pk}"
-        db_manager.execute_query(document_update_query)
+        document_status_update_query = f"UPDATE document SET quiz_generation_status = 'PARTIAL_SUCCESS' WHERE id = {db_pk}"
+        db_manager.execute_query(document_status_update_query)
         db_manager.commit()
         logging.info(f"MixUp quiz: PARTIAL_SUCCESS")
 
     else:  # ALL successful
-        document_update_query = f"UPDATE document SET quiz_generation_status = 'PROCESSED' WHERE id = {db_pk}"
-        db_manager.execute_query(document_update_query)
+        document_status_update_query = f"UPDATE document SET quiz_generation_status = 'PROCESSED' WHERE id = {db_pk}"
+        db_manager.execute_query(document_status_update_query)
         db_manager.commit()
         logging.info(f"MixUp quiz: PROCESSED")
     
