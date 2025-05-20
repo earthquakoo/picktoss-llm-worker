@@ -45,6 +45,8 @@ def multiple_choice_worker(
     success_at_least_once = False
     failed_at_least_once = False
 
+    total_quiz_count = 0
+
     for content_split in content_splits:
         print(f"content_split: {content_split}")
 
@@ -93,6 +95,7 @@ def multiple_choice_worker(
                 else:
                     # options가 4개가 아니라면 record에 기록하기
                     continue
+                total_quiz_count += 1
 
         except Exception as e:
             discord_client.report_llm_error(
@@ -109,8 +112,10 @@ def multiple_choice_worker(
 
     db_manager.commit()
 
+    print(total_quiz_count)
+
     # Failed at every single generation
-    if not success_at_least_once:
+    if not success_at_least_once or total_quiz_count <= 5:
         db_manager.rollback()
 
         star_select_query = f"SELECT * FROM star WHERE member_id = {member_id}"

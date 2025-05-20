@@ -40,6 +40,8 @@ def mix_up_worker(
     success_at_least_once = False
     failed_at_least_once = False
 
+    total_quiz_count = 0
+
     timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
     for content_split in content_splits:
         print(f"content_split: {content_split}")
@@ -84,10 +86,10 @@ def mix_up_worker(
                     question_insert_query = "INSERT INTO quiz (question, answer, explanation, delivered_count, quiz_type, correct_answer_count, is_review_needed, is_latest, document_id, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                     db_manager.execute_query(question_insert_query, (question, answer, explanation, delivered_count, QuizType.MIX_UP.value, correct_answer_count, False, True, db_pk, timestamp, timestamp))
                 else:
-                    # 여기서에서 만약 quiz answer이 incorrect or correct 형식이 아니면 에러 메시지 남기기
-                    # db에서 결제 record 남기는 형식처럼?
                     print("정답 오류")
                     continue
+
+                total_quiz_count += 1
 
         except Exception as e:
             discord_client.report_llm_error(
@@ -105,7 +107,7 @@ def mix_up_worker(
     db_manager.commit()
 
     # Failed at every single generation
-    if not success_at_least_once:
+    if not success_at_least_once or total_quiz_count <= 5:
         db_manager.rollback()
 
         star_select_query = f"SELECT * FROM star WHERE member_id = {member_id}"
