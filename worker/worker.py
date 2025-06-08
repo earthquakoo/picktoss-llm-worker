@@ -8,6 +8,7 @@ from core.llm.openai import OpenAIChatLLM
 from core.database.database_manager import DatabaseManager
 from app.quiz.mix_up import mix_up_worker
 from app.quiz.multiple_choice import multiple_choice_worker
+from app.title.title_generator import title_generation_worker
 
 
 logging.basicConfig(level=logging.INFO)
@@ -52,6 +53,8 @@ def handler(event, context):
     update_quiz_is_latest_query = f"UPDATE quiz SET is_latest = false WHERE document_id = {db_pk}"
     db_manager.execute_query(update_quiz_is_latest_query)
     db_manager.commit()
+
+    title_generation_worker(s3_client, discord_client, chat_llm, s3_key, db_pk)
 
     if quiz_type == "MIX_UP":
         mix_up_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, member_id, star_count)

@@ -1,15 +1,17 @@
 import os
+import time
 import pytz
 import logging
 from datetime import datetime
+from langchain_core.runnables import RunnableLambda
 
-from core.database.database_manager import DatabaseManager
 from core.s3.s3_client import S3Client
+from core.database.database_manager import DatabaseManager
 from core.discord.discord_client import DiscordClient
-from core.llm.openai import OpenAIChatLLM
+from core.enums.enum import LLMErrorType, QuizType, TransactionType, Source
+from core.llm.openai import ChatMessage, OpenAIChatLLM
 from core.llm.exception import InvalidLLMJsonResponseError
-from core.enums.enum import LLMErrorType, DocumentStatus, QuizType, TransactionType, Source
-from core.llm.utils import fill_message_placeholders, load_prompt_messages, markdown_content_splitter
+from core.llm.utils import fill_message_placeholders, load_prompt_messages, content_splitter
 
 
 logging.basicConfig(level=logging.INFO)
@@ -25,55 +27,65 @@ def mix_up_worker(
     star_count: int
     ):
     print("Start Mix-up Worker")
-    bucket_obj = s3_client.get_object(key=s3_key)
-    content = bucket_obj.decode_content_str()
-    
+    start_time = time.time()
+
     db_manager = DatabaseManager(host=os.environ["PICKTOSS_DB_HOST"], user=os.environ["PICKTOSS_DB_USER"], password=os.environ["PICKTOSS_DB_PASSWORD"], db=os.environ["PICKTOSS_DB_NAME"])
 
-    content_splits = markdown_content_splitter(content)
+    bucket_obj = s3_client.get_object(key=s3_key)
+    content = bucket_obj.decode_content_str()
+    content_splits = content_splitter(content)
 
     # dev & prod
-    without_placeholder_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_mix_up_quiz.txt") 
+    prompt_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_mix_up_quiz.txt") 
     # local
-    # without_placeholder_messages = load_prompt_messages(prompt_path="core/llm/prompts/generate_mix_up_quiz.txt")
+    # prompt_messages = load_prompt_messages("core/llm/prompts/generate_mix_up_quiz.txt")
+
+    batch_inputs: list[list[ChatMessage]] = []
+    for split in content_splits:
+        filled_messages = fill_message_placeholders(
+            messages=prompt_messages,
+            placeholders={"note": split}
+        )
+        batch_inputs.append(filled_messages)
+
+    predict_json_runnable = RunnableLambda(chat_llm.predict_json)
+    results = []
 
     success_at_least_once = False
     failed_at_least_once = False
 
-    total_quiz_count = 0
+    try:
+        results = predict_json_runnable.batch(batch_inputs)
+    except InvalidLLMJsonResponseError as e:
+        discord_client.report_llm_error(
+            task="Question Generation",
+            error_type=LLMErrorType.INVALID_JSON_FORMAT,
+            document_content=content_splits[0],
+            llm_response=e.llm_response,
+            error_message="LLM Response is not JSON-decodable",
+            info=f"* s3_key: `{s3_key}`\n* document_id: `{db_pk}`",
+        )
+        failed_at_least_once = True
+    except Exception as e:
+        discord_client.report_llm_error(
+            task="Question Generation",
+            error_type=LLMErrorType.GENERAL,
+            document_content=content_splits[0],
+            error_message="Failed to generate questions",
+            info=f"* s3_key: `{s3_key}`\n* document_id: `{db_pk}`",
+        )
+        failed_at_least_once = True
 
     timestamp = datetime.now(pytz.timezone('Asia/Seoul'))
-    for content_split in content_splits:
-        print(f"content_split: {content_split}")
 
-        messages = fill_message_placeholders(messages=without_placeholder_messages, placeholders={"note": content_split})
-        try:
-            resp_dict = chat_llm.predict_json(messages)
-            print(resp_dict)
-        except InvalidLLMJsonResponseError as e:
-            discord_client.report_llm_error(
-                task="Question Generation",
-                error_type=LLMErrorType.INVALID_JSON_FORMAT,
-                document_content=content_split,
-                llm_response=e.llm_response,
-                error_message="LLM Response is not JSON-decodable",
-                info=f"* s3_key: `{s3_key}`\n* document_id: `{db_pk}`",
-            )
-            failed_at_least_once = True
-            continue
-        except Exception as e:
-            discord_client.report_llm_error(
-                task="Question Generation",
-                error_type=LLMErrorType.GENERAL,
-                document_content=content_split,
-                error_message="Failed to generate questions",
-                info=f"* s3_key: `{s3_key}`\n* document_id: `{db_pk}`",
-            )
-            failed_at_least_once = True
-            continue
+    total_quiz_count = 0
+
+
+    for i, result in enumerate(results):
+        print(f"Chunk {i + 1} result:", result)
 
         try:
-            for q_set in resp_dict:
+            for q_set in result:
 
                 question, answer, explanation = q_set["question"], q_set["answer"], q_set["explanation"]
                 correct_answer_count = 0
@@ -95,8 +107,8 @@ def mix_up_worker(
             discord_client.report_llm_error(
                 task="Question Generation",
                 error_type=LLMErrorType.GENERAL,
-                document_content=content_split,
-                error_message=f"LLM Response is JSON decodable but does not have 'question' and 'answer' keys.\nresp_dict: {resp_dict}",
+                document_content=result[i],
+                error_message=f"LLM Response is JSON decodable but does not have 'question' and 'answer' keys.\nresp_dict: {result}",
                 info=f"* s3_key: `{s3_key}`\n* document_id: `{db_pk}`",
             )
             failed_at_least_once = True
@@ -144,4 +156,6 @@ def mix_up_worker(
     
     
     db_manager.close()
+    end_time = time.time()
+    print(f"퀴즈 생성 함수 걸린 시간: {end_time - start_time}")
     print("End Mix-up Worker")

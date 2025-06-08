@@ -30,6 +30,23 @@ def fill_message_placeholders(messages: list[ChatMessage], placeholders: dict[st
 
     return messages
 
+def content_splitter(content: str) -> list[str]:
+    content_splits: list[str] = []
+
+    chunk_size = 1000 # 2000 ~ 3000
+    chunk_overlap = 150 # 100 ~ 200
+    separators=["\n\n", "\n", ".", " "]
+
+    character_text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap, separators=separators
+    )
+    
+    character_text_splits = character_text_splitter.split_text(content)
+    for content_split in character_text_splits:
+        content_splits.append(content_split)
+
+    return content_splits
+
 def markdown_content_splitter(content: str) -> list[str]:
     content_splits: list[str] = []
 

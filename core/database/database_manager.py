@@ -1,7 +1,7 @@
 import pymysql
 
 class DatabaseManager:
-    def __init__(self, host, user, password, db, charset='utf8'):
+    def __init__(self, host, user, password, db, charset='utf8mb4'):
         self.host = host
         self.user = user
         self.password = password
