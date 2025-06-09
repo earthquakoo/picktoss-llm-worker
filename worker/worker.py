@@ -6,9 +6,8 @@ from core.s3.s3_client import S3Client
 from core.discord.discord_client import DiscordClient
 from core.llm.openai import OpenAIChatLLM
 from core.database.database_manager import DatabaseManager
-from app.quiz.mix_up import mix_up_worker
-from app.quiz.multiple_choice import multiple_choice_worker
-from app.title.title_generator import title_generation_worker
+from app.document.document_data_generator import document_data_generator
+from app.quiz.quiz_generator import quiz_generator
 
 
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +22,6 @@ def handler(event, context):
     
     s3_key = body["s3_key"]
     db_pk = int(body["db_pk"])
-    quiz_type = body["quiz_type"]
     star_count = body["star_count"]
     member_id = body["member_id"]
 
@@ -54,15 +52,9 @@ def handler(event, context):
     db_manager.execute_query(update_quiz_is_latest_query)
     db_manager.commit()
 
-    title_generation_worker(s3_client, discord_client, chat_llm, s3_key, db_pk)
+    document_data_generator(s3_client, discord_client, chat_llm, s3_key, db_pk)
 
-    if quiz_type == "MIX_UP":
-        mix_up_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, member_id, star_count)
-    elif quiz_type == "MULTIPLE_CHOICE":
-        multiple_choice_worker(s3_client, discord_client, chat_llm, s3_key, db_pk, member_id, star_count)
-    else:
-        ## exception
-        return 
+    quiz_generator(s3_client, discord_client, chat_llm, s3_key, db_pk, member_id, star_count)
 
     delete_outbox_query = f"DELETE FROM outbox WHERE document_id = {db_pk}"
     db_manager.execute_query(delete_outbox_query)
