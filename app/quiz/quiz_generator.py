@@ -84,7 +84,7 @@ def quiz_generator(
         print(f"Chunk {i + 1} result:", result)
 
         try:
-            for q_set in result:
+            for q_set in result['quizzes']:
 
                 if q_set["type"] == "multiple_choice":
                     question, answer, options, explanation = q_set["question"], q_set["answer"], q_set["options"], q_set["explanation"]
