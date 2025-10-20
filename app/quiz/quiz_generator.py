@@ -35,10 +35,25 @@ def quiz_generator(
     content = bucket_obj.decode_content_str()
     content_splits = content_splitter(content)
 
-    # dev & prod
-    prompt_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_quiz.txt") 
-    # local
-    # prompt_messages = load_prompt_messages("core/llm/prompts/generate_quiz.txt")
+    language = "en"
+
+    document_select_query = f"SELECT * FROM document WHERE id = {db_pk}"
+    document = db_manager.execute_query(document_select_query)
+    if document and len(document) > 0:
+        language = document[0]['language']
+    
+    if language == "en":
+        # dev & prod
+        prompt_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_en_quiz.txt")
+        # local
+        # prompt_messages = load_prompt_messages("core/llm/prompts/generate_en_quiz.txt")
+    elif language == "ko":
+        # dev & prod
+        prompt_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_ko_quiz.txt")
+        # local
+        # prompt_messages = load_prompt_messages("core/llm/prompts/generate_ko_quiz.txt")
+    else:
+        prompt_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_en_quiz.txt")
 
     batch_inputs: list[list[ChatMessage]] = []
     for split in content_splits:
@@ -140,6 +155,10 @@ def quiz_generator(
     if not success_at_least_once or total_quiz_count <= 5:
         db_manager.rollback()
 
+        description = "퀴즈 생성 실패로 인한 별 반환"
+        if language == "en":
+            description = "Star return due to quiz generation failure"
+        
         star_select_query = f"SELECT * FROM star WHERE member_id = {member_id}"
         star = db_manager.execute_query(star_select_query)
         cur_star_count = star[0]['star']
@@ -150,7 +169,7 @@ def quiz_generator(
         document_update_query = f"UPDATE document SET quiz_generation_status = 'QUIZ_GENERATION_ERROR', is_public = false WHERE id = {db_pk}"
         
         db_manager.execute_query(star_update_query)
-        db_manager.execute_query(star_history_update_query, ("퀴즈 오류로 인한 별 반환", star_count, cur_star_count + star_count, TransactionType.DEPOSIT.value, Source.SERVICE.value, star_id, timestamp, timestamp))
+        db_manager.execute_query(star_history_update_query, (description, star_count, cur_star_count + star_count, TransactionType.DEPOSIT.value, Source.SERVICE.value, star_id, timestamp, timestamp))
         db_manager.execute_query(document_update_query)
         
         db_manager.commit()

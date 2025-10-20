@@ -30,10 +30,25 @@ def document_data_generator(
     bucket_obj = s3_client.get_object(key=s3_key)
     content = bucket_obj.decode_content_str()
 
-    # dev & prod
-    prompt_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_document_data.txt") 
-    # local
-    # prompt_messages = load_prompt_messages(prompt_path="core/llm/prompts/generate_document_data.txt")
+    language = "en"
+
+    document_select_query = f"SELECT * FROM document WHERE id = {db_pk}"
+    document = db_manager.execute_query(document_select_query)
+    if document and len(document) > 0:
+        language = document[0]['language']
+
+    if language == "en":
+        # dev & prod
+        prompt_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_en_document_data.txt") 
+        # local
+        # prompt_messages = load_prompt_messages(prompt_path="core/llm/prompts/generate_en_document_data.txt")
+    elif language == "ko":
+        # dev & prod
+        prompt_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_ko_document_data.txt") 
+        # local
+        # prompt_messages = load_prompt_messages(prompt_path="core/llm/prompts/generate_document_data.txt")
+    else:
+        prompt_messages = load_prompt_messages(prompt_path="/var/task/core/llm/prompts/generate_en_document_data.txt")
 
     messages = fill_message_placeholders(messages=prompt_messages, placeholders={"note": content})
 
