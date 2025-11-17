@@ -10,6 +10,7 @@ When you receive study notes, please understand their content and generate an ap
 4. The emoji's Unicode must be from the utf8mb4 Character Set.
 5. I have pre-selected the categories, and you must choose only from these selected categories.
 6. If the document is nonsensical, please send NULL values for the title and category.
+7. You must generate a title in the same language as the note.
 
 ### Categories ###
 
